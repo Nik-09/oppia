@@ -32,6 +32,7 @@ from core.domain import auth_services
 from core.domain import config_domain
 from core.domain import config_services
 from core.domain import user_services
+from payload_validator import validate
 import feconf
 import python_utils
 import utils
@@ -302,6 +303,38 @@ class BaseHandler(webapp2.RequestHandler):
                 return
 
         super(BaseHandler, self).dispatch()
+
+    def validate_args_schema(self):
+        """Docstring."""
+
+        # Receive url args and its schema.
+        url_args = slef.request.route_kwarg
+        schema_for_url_args = self.get_url_args() #define in handler class.
+
+        # Call validate method from payload validator.
+        # Modify for strict validation.
+        errors = payload_validator.validate(url_args, schema_for_url_args)
+        if errors:
+            raise Exception('/n'.join(errors))
+
+        # functionality to collect request args schema.
+        schema_for_request_args = self.get_args_schema()
+        request_method = self.request.environ['REQUEST_METHOD']
+        if request_method key is not present in schema_for_request_args:
+            raise Not
+        schema_for_request_args = schema_for_request_args[request_method]
+
+        request_args = self.request.payload
+        query_string_args = self.request.query_string
+        query_args = parse.parse_qs(query_string_args)
+        request_args.update(query_args) #merge two dicts.
+
+        # Call validate method from payload validator.
+        # Think for strict validation.
+        errors = payload_validator.validate(
+            request_args, schema_for_request_args)
+        if errors:
+            raise Exception('\n'.join(errors))
 
     def get(self, *args, **kwargs):  # pylint: disable=unused-argument
         """Base method to handle GET requests."""
