@@ -20,47 +20,58 @@ from __future__ import absolute_import  # pylint: disable=import-only-modules
 from __future__ import unicode_literals  # pylint: disable=import-only-modules
 
 import schema_utils
+import python_utils
 
-def validate(handler_args, handler_args_schema, strict_validation):
+
+def validate(handler_args, handler_args_schema, strict_validation=True):
     """Docstring."""
-    errors = []
-    required_args = []
-    default_present = False
+
+    errors = [] # collect all errors and present them at once.
+    required_args = [] # collect re required args in schema.
     for arg_key, arg_schema in handler_args_schema.items():
-        optional = False
+        optional = False # Flag to check optional values.
+        default_present = False # Flag to check default values.
+
         if 'optional' in arg_schema:
             optional = arg_schema['optional']
+            # assert isinstance((optional, bool), (
+            #     'Expected optional to be a boolean value, found %s' % optional))
             del arg_schema['optional']
-            assert isinstance((optional, bool), (
-                'Expected optional to be a boolean value, found %s' % optional))
 
         if arg_key not in handler_args:
             if optional:
                 continue
             elif 'default' in arg_schema:
                 value = arg_schema['default']
+                if value == None:
+                    continue
                 del arg_schema['default']
                 default_present = True
+            else:
+                required_args.append(arg_key)
+                continue
 
-        if not optional:
+        if not optional and not default_present:
             required_args.append(arg_key)
-
         if not default_present:
             value = handler_args[arg_key]
+
         try:
             normalized_value = schema_utils.normalize_against_schema(
-                value, arg_schema, apply_custom_validator=True)
+                value, arg_schema, strict_validation)
         except Exception as e:
             errors.append(
                 'Schema validation for \'%s\' failed: %s' % (arg_key, e))
 
+    # Modify this to allow default values.
     missing_args = set(required_args) - set(handler_args.keys())
     if strict_validation:
-        extra_args = set(handler_args.keys()) - set(arg_schema.keys())
+        extra_args = set(handler_args.keys()) - set(handler_args_schema.keys())
 
     if missing_args:
         errors.append('Missing args: %s' % ', '.join(missing_args))
 
     if extra_args:
         errors.append('Found extra params: %s' % ', '.join(extra_args))
+
     return errors

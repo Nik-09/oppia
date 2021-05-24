@@ -62,13 +62,27 @@ class EditorHandler(base.BaseHandler):
     pass
 
 
-class ExplorationPage(EditorHandler):
+class ExplorationPage(base.BaseHtmlHandler):
     """The editor page for a single exploration."""
+
+    def get_url_args_schema(self):
+        return {
+            'exploration_id': {
+                'type': 'unicode'
+            }
+        }
+
+    def get_request_args_schema(self):
+        return {
+            'GET': {}
+        }
 
     @acl_decorators.can_play_exploration
     def get(self, unused_exploration_id):
         """Handles GET requests."""
-
+        print('\n'*5)
+        print('check'*10)
+        print(unused_exploration_id)
         self.render_template('exploration-editor-page.mainpage.html')
 
 
@@ -76,6 +90,22 @@ class ExplorationHandler(EditorHandler):
     """Page with editor data for a single exploration."""
 
     GET_HANDLER_ERROR_RETURN_TYPE = feconf.HANDLER_TYPE_JSON
+
+    def get_request_arg_schema(schema):
+        return {
+            'GET': {
+                'v': {
+                    'type': 'int',
+                    'optional': True,
+                    'default': None
+                },
+                'apply_draft': {
+                    'type': 'bool',
+                    'optional': True,
+                    'default': False
+                }
+            }
+        }
 
     @acl_decorators.can_play_exploration
     def get(self, exploration_id):
@@ -214,6 +244,44 @@ class UserExplorationPermissionsHandler(EditorHandler):
 
 class ExplorationRightsHandler(EditorHandler):
     """Handles management of exploration editing rights."""
+
+    def get_url_args_schema(self):
+        return {
+            'exploration_id': {
+                'type': 'unicode'
+            }
+        }
+
+    # def get_request_args_schema(self):
+    #     return {
+    #         'DELETE': {
+    #             'username': {
+    #                 'type': 'list',
+    #                 'items': {
+    #                     'type': 'unicode'
+    #                 }
+    #             }
+    #         },
+    #         'PUT': {
+    #             'version': {
+    #                 'type': 'int'
+    #             },
+    #             'make_community_owned': {
+    #                 'type': 'int',
+    #                 'default': None
+    #             },
+    #             'new_member_username': {
+    #                 'type': 'unicode'
+    #             },
+    #             'new_member_role': {
+    #                 'type': 'unicode'
+    #             },
+    #             'viewable_if_private': {
+    #                 'type': 'bool',
+    #                 'optional': True
+    #             }
+    #         }
+    #     }
 
     @acl_decorators.can_modify_exploration_roles
     def put(self, exploration_id):

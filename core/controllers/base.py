@@ -26,13 +26,14 @@ import os
 import sys
 import time
 import traceback
-
+import  urlparse
 from core.domain import auth_domain
 from core.domain import auth_services
 from core.domain import config_domain
 from core.domain import config_services
 from core.domain import user_services
-from payload_validator import validate
+from core.controllers import payload_validator
+from core.controllers import old_handlers_not_having_schema
 import feconf
 import python_utils
 import utils
@@ -242,6 +243,7 @@ class BaseHandler(webapp2.RequestHandler):
             user_services.is_topic_manager(self.user_id))
         self.values['is_super_admin'] = self.current_user_is_super_admin
 
+
     def dispatch(self):
         """Overrides dispatch method in webapp2 superclass.
 
@@ -301,6 +303,8 @@ class BaseHandler(webapp2.RequestHandler):
 
                 self.handle_exception(e, self.app.debug)
                 return
+        self.validate_args_schema()
+
 
         super(BaseHandler, self).dispatch()
 
@@ -308,33 +312,59 @@ class BaseHandler(webapp2.RequestHandler):
         """Docstring."""
 
         # Receive url args and its schema.
-        url_args = slef.request.route_kwarg
-        schema_for_url_args = self.get_url_args() #define in handler class.
+        url_args = self.request.route_kwargs
+        handler_class_name = self.__class__.__name__
+
+        try:
+            schema_for_url_args = self.get_url_args_schema() #defined in handler class.
+        except:
+            if handler_class_name not in old_handlers_not_having_schema.list_of_old_handlers:
+                raise NotImplementedError(
+                    'Please provide schema for url args in %s handler class.' % handler_class_name)
+            else:
+                return
 
         # Call validate method from payload validator.
         # Modify for strict validation.
         errors = payload_validator.validate(url_args, schema_for_url_args)
         if errors:
-            raise Exception('/n'.join(errors))
+            print('errors found')
+            raise Exception('\n'.join(errors))
 
         # functionality to collect request args schema.
-        schema_for_request_args = self.get_args_schema()
         request_method = self.request.environ['REQUEST_METHOD']
-        if request_method key is not present in schema_for_request_args:
-            raise Not
-        schema_for_request_args = schema_for_request_args[request_method]
 
-        request_args = self.request.payload
+        try:
+            schema_for_request_args = self.get_request_args_schema()
+            schema_for_request_args = schema_for_request_args[request_method]
+        except:
+            raise NotImplementedError(
+                'Please provide schema for %s method in %s handler class' % (request_method, handler_class_name))
+
+        request_args = self.payload
         query_string_args = self.request.query_string
-        query_args = parse.parse_qs(query_string_args)
-        request_args.update(query_args) #merge two dicts.
+        query_args = urlparse.parse_qs(query_string_args)
+
+        if (request_method == 'PUT'):
+            args = request_args
+        else:
+            args = query_args
 
         # Call validate method from payload validator.
         # Think for strict validation.
-        errors = payload_validator.validate(
-            request_args, schema_for_request_args)
+        errors = payload_validator.validate(args, schema_for_request_args)
         if errors:
             raise Exception('\n'.join(errors))
+
+    def get_url_args_schema(self):
+        """Base method to handle get_url_arg_schema.
+        """
+        raise NotImplementedError
+
+    def get_request_args_schema(self):
+        """Base method to handle get_request_arg_schema.
+        """
+        raise NotImplementedError
 
     def get(self, *args, **kwargs):  # pylint: disable=unused-argument
         """Base method to handle GET requests."""
@@ -563,6 +593,14 @@ class BaseHandler(webapp2.RequestHandler):
     UnauthorizedUserException = UserFacingExceptions.UnauthorizedUserException
     TemporaryMaintenanceException = (
         UserFacingExceptions.TemporaryMaintenanceException)
+
+
+class BaseHtmlHandler(BaseHandler):
+    """Base class for all html handlers. This class disable strict validation
+    flag for SVS architecture inorder to allow extra params.
+    For more info: https://github.com/oppia/oppia/wiki/..(reference link)
+    """
+    strict_validation = False
 
 
 class Error404Handler(BaseHandler):
