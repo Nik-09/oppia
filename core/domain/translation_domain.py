@@ -20,7 +20,185 @@ from __future__ import annotations
 
 from core import utils
 
-from typing import Dict
+from typing import Dict, DefaultDict
+
+import collections
+
+
+TRANSLATABLE_CONTENT_FORMAT_HTML = 'html'
+TRANSLATABLE_CONTENT_FORMAT_UNICODE_STRING = 'unicode'
+TRANSLATABLE_CONTENT_FORMAT_SET_OF_NORMALIZED_STRING = (
+    'set_of_normalized_string')
+TRANSLATABLE_CONTENT_FORMAT_SET_OF_UNICODE_STRING = 'set_of_unicode_string'
+TRANSLATABLE_CONTENT_FORMAT_OBJECT = 'object'
+
+class BaseTranslatableObject:
+    """Base class for all translatable object."""
+    _translatable_contents: DefaultDict(str, TranslatableContent) = (
+        collections.defaultdict(list))
+
+    def _register_all_translatable_fields(self) -> None:
+        """Base method to register translatable fields.
+
+        Raises:
+            NotImplementedError. The derived child class must implement the
+                necessary logic to register all translatable fields in an
+                entity.
+        """
+        raise NotImplementedError
+
+    def _register_translatable_field(
+        self,
+        field_type: str,
+        value: BaseTranslatableObject | TranslatableContent
+    ) -> None:
+        """Base method to register a translatable field in an entity.
+        """
+        if field_type == TRANSLATABLE_CONTENT_FORMAT_OBJECT:
+            translatable_fields = value.get_translatable_fields()
+            for content_type, contents in translatable_fields.items():
+                self._translatable_contents[content_type] += (contents)
+
+            return
+        if not isinstance(value, TranslatableContent):
+            raise Exception("Expected TranslatableContent, found %s" % value)
+
+        if field_type != value.type:
+            raise Exception("Expected field type to be %s but found %s" % (
+                field_type, value.type))
+
+        self._translatable_contents[field_type].append(value)
+
+    def get_translatable_fields(self) -> None:
+        """Base method to get all the translatable fields for an entity.
+
+        Returns:
+            list(TranslatableContent). Returns the list of translatable fields
+                for an entity.
+        """
+        self._translatable_contents = collections.defaultdict(list)
+        self._register_all_translatable_fields()
+        return self._translatable_contents
+
+    def get_all_content_which_needs_translations(
+        self,
+        entityTranslations: EntityTranslations
+    ) -> list():
+        """Base method to return all translatable objects which need either
+        translations or their existing translations needs update.
+
+        Returns:
+            list(TranslatableContent). Returns the list of TranslatableContent.
+        """
+        # Contents which need translations.
+        contents_which_need_translation = []
+        entity_translations_dict = entityTranslations.translations
+
+        for translatable_content in self.get_translatable_fields().values():
+            translatable_content_hash = translatable_content.hash
+
+            if not translatable_content_hash in entity_translations_dict:
+                contents_which_need_translation.append(translatable_content)
+                continue
+            if entity_translations_dict[translatable_content_hash].needs_update:
+                contents_which_need_translation.append(translatable_content)
+
+        return contents_which_need_translation
+
+    def validate_translatable_contents(self):
+        """Base method to validate BaseTranalatableObject."""
+        pass
+
+
+class EntityTranslations:
+    """The EntityTranslation presents an EntityTranslationsModel for a given
+    entity in a given language.
+    """
+
+    def __init__(
+        self,
+        entity_translation_id: str,
+        entity_type: str,
+        entity_id: str,
+        language_code: str,
+        translations: Dict(str, TranslatedContent)
+    ):
+        """Initializes the EntityTranslations domain object."""
+        self.id = entity_translation_id
+        self.entity_type = entity_type
+        self.entity_id = entity_id
+        self.language_code = language_code
+        self.translations = translations
+
+
+class TranslatableContent:
+    """Represents the content of an object which can be translated into
+    multiple languages.
+    """
+    MAX_LENGHT_FOR_CONTENT_HASH = 12
+
+    def __init__(
+        self,
+        content_type: str,
+        content: Any,
+        content_hash: str
+    ):
+        self.type = content_type
+        self.content = content
+        self.hash = content_hash
+
+    def to_dict():
+        return {
+            'type': self.type,
+            'content': self.content,
+            'hash': self.hash
+        }
+
+    @classmethod
+    def create_new(cls, content_type: str, content: Any):
+        return cls(
+            content_type,
+            content,
+            utils.convert_to_hash(content, cls.MAX_LENGHT_FOR_CONTENT_HASH)
+        )
+
+    @classmethod
+    def from_dict(cls, translated_content_dict):
+        return cls(
+            translatable_content_dict['type'],
+            translatable_content_dict['content'])
+
+
+class TranslatedContent:
+    """Represents the contents of translated object."""
+
+    def __init__(
+        self,
+        content_type:str,
+        content: Any,
+        content_hash: str,
+        needs_update:str = False
+    ):
+        self.type = content_type
+        self.content = content
+        self.hash = content_hash
+        self.needs_update = needs_update
+
+    def to_dict(self):
+        return {
+            'type': self.type,
+            'content': self.content,
+            'hash': self.hash,
+            'needs_update': self.needs_update
+        }
+
+    @classmethod
+    def from_dict(self, translated_content_dict):
+        return cls(
+            translated_content_dict['content_type'],
+            translated_content_dict['content'],
+            translated_content_dict['content_hash'],
+            translated_content_dict['needs_update'])
 
 
 class MachineTranslation:

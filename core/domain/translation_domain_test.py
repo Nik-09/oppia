@@ -77,3 +77,78 @@ class MachineTranslationTests(test_utils.GenericTestBase):
                 'translated_text': 'hola mundo'
             }
         )
+
+
+class TranslatableObject1(translation_domain.BaseTranslatableObject):
+
+    def __init__(
+        self,
+        param1: TranslatableContent,
+        param2: TranslatableObject2
+    ) -> None:
+        self.param1 = param1
+        self.param2 = param2
+
+    def _register_all_translatable_fields(self) -> None:
+        self._register_translatable_field(
+            translation_domain.TRANSLATABLE_CONTENT_FORMAT_UNICODE_STRING,
+            self.param1)
+        self._register_translatable_field(
+            translation_domain.TRANSLATABLE_CONTENT_FORMAT_OBJECT, self.param2)
+
+
+class TranslatableObject2(translation_domain.BaseTranslatableObject):
+
+    def __init__(
+        self,
+        param3: TranslatableContent
+    ) -> None:
+        self.param3 = param3
+
+    def _register_all_translatable_fields(self) -> None:
+        self._register_translatable_field(
+            translation_domain.TRANSLATABLE_CONTENT_FORMAT_UNICODE_STRING,
+            self.param3)
+
+class BaseTranslatableObjectUnitTest(test_utils.GenericTestBase):
+
+    def setUp(self):
+        super(BaseTranslatableObjectUnitTest, self).setUp()
+        self.translatable_content1 = (
+            translation_domain.TranslatableContent.create_new(
+                translation_domain.TRANSLATABLE_CONTENT_FORMAT_UNICODE_STRING,
+                'My name is jhon.'))
+        self.translatable_content2 = (
+            translation_domain.TranslatableContent.create_new(
+                translation_domain.TRANSLATABLE_CONTENT_FORMAT_UNICODE_STRING,
+                'My name is jack.'))
+        self.translated_object1 = TranslatableObject1(
+            self.translatable_content1,
+            TranslatableObject2(self.translatable_content2)
+        )
+
+
+    def test_get_all_translatable_content_returns_correct_items(self):
+        expected_contents = [
+            'My name is jhon.',
+            'My name is jack.'
+        ]
+        translatable_contents = (
+            self.translated_object1.get_translatable_fields()['unicode'])
+
+        self.assertItemsEqual(expected_contents, [
+            translatable_content.content
+            for translatable_content in translatable_contents
+        ])
+
+
+    def test_mismatching_field_type_while_register_raise_exception(self):
+
+        translatable_content3 = (
+            translation_domain.TranslatableContent.create_new(
+                translation_domain.TRANSLATABLE_CONTENT_FORMAT_HTML,
+                'My name is jhon.'))
+        self.translated_object1.param1 = translatable_content3
+        with self.assertRaisesRegexp(
+            Exception, 'Expected field type to be unicode but found html'):
+            self.translated_object1.get_translatable_fields()
