@@ -23,6 +23,8 @@ from core import utils
 from typing import Dict, DefaultDict
 
 import collections
+from core.domain import html_cleaner
+
 
 
 TRANSLATABLE_CONTENT_FORMAT_HTML = 'html'
@@ -50,24 +52,26 @@ class BaseTranslatableObject:
     def _register_translatable_field(
         self,
         field_type: str,
-        value: BaseTranslatableObject | TranslatableContent
+        translatable_field: BaseTranslatableObject | TranslatableContent
     ) -> None:
         """Base method to register a translatable field in an entity.
         """
         if field_type == TRANSLATABLE_CONTENT_FORMAT_OBJECT:
-            translatable_fields = value.get_translatable_fields()
+            translatable_fields = translatable_field.get_translatable_fields()
             for content_type, contents in translatable_fields.items():
                 self._translatable_contents[content_type] += (contents)
-
             return
-        if not isinstance(value, TranslatableContent):
-            raise Exception("Expected TranslatableContent, found %s" % value)
 
-        if field_type != value.type:
+        if not isinstance(translatable_field, TranslatableContent):
+            raise Exception(
+                "Expected TranslatableContent, found %s" % translatable_field)
+
+        if field_type != translatable_field.type:
             raise Exception("Expected field type to be %s but found %s" % (
-                field_type, value.type))
+                field_type, translatable_field.type))
 
-        self._translatable_contents[field_type].append(value)
+        if translatable_field.value != '':
+            self._translatable_contents[field_type].append(translatable_field)
 
     def get_translatable_fields(self) -> None:
         """Base method to get all the translatable fields for an entity.
@@ -140,33 +144,50 @@ class TranslatableContent:
     def __init__(
         self,
         content_type: str,
-        content: Any,
+        value: Any,
         content_hash: str
     ):
         self.type = content_type
-        self.content = content
+        self.value = value
         self.hash = content_hash
 
-    def to_dict():
+    def to_dict(self):
         return {
             'type': self.type,
-            'content': self.content,
+            'value': self.value,
             'hash': self.hash
         }
 
     @classmethod
-    def create_new(cls, content_type: str, content: Any):
+    def create_new(cls, content_type: str, value: Any):
         return cls(
             content_type,
-            content,
-            utils.convert_to_hash(content, cls.MAX_LENGHT_FOR_CONTENT_HASH)
+            value,
+            utils.convert_to_hash(value, cls.MAX_LENGHT_FOR_CONTENT_HASH)
         )
 
     @classmethod
-    def from_dict(cls, translated_content_dict):
+    def from_dict(cls, translatable_content_dict):
         return cls(
             translatable_content_dict['type'],
-            translatable_content_dict['content'])
+            translatable_content_dict['value'],
+            translatable_content_dict['hash'])
+
+    @classmethod
+    def create_default_translatable_content(cls, content_type):
+        return cls(content_type, '', '')
+
+    def validate(self):
+        if not isinstance(self.hash, str):
+            raise utils.ValidationError(
+                'Expected hash to be a string, received %s' % self.hash)
+        if not isinstance(self.value, str):
+            raise utils.ValidationError(
+                'Invalid value of the content : %s' % self.value)
+
+        if self.type == TRANSLATABLE_CONTENT_FORMAT_HTML:
+            self.value = html_cleaner.clean(self.value)
+
 
 
 class TranslatedContent:
@@ -175,19 +196,19 @@ class TranslatedContent:
     def __init__(
         self,
         content_type:str,
-        content: Any,
+        value: Any,
         content_hash: str,
         needs_update:str = False
     ):
         self.type = content_type
-        self.content = content
+        self.value = value
         self.hash = content_hash
         self.needs_update = needs_update
 
     def to_dict(self):
         return {
             'type': self.type,
-            'content': self.content,
+            'value': self.value,
             'hash': self.hash,
             'needs_update': self.needs_update
         }
@@ -196,7 +217,7 @@ class TranslatedContent:
     def from_dict(self, translated_content_dict):
         return cls(
             translated_content_dict['content_type'],
-            translated_content_dict['content'],
+            translated_content_dict['value'],
             translated_content_dict['content_hash'],
             translated_content_dict['needs_update'])
 

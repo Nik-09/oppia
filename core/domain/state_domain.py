@@ -36,10 +36,11 @@ from core.domain import interaction_registry
 from core.domain import param_domain
 from core.domain import rules_registry
 from core.domain import translatable_object_registry
+from core.domain import translation_domain
 from extensions.objects.models import objects
 
 
-class AnswerGroup:
+class AnswerGroup(translation_domain.BaseTranslatableObject):
     """Value object for an answer group. Answer groups represent a set of rules
     dictating whether a shared feedback should be shared with the user. These
     rules are ORed together. Answer groups may also support a classifier
@@ -70,6 +71,16 @@ class AnswerGroup:
         self.outcome = outcome
         self.training_data = training_data
         self.tagged_skill_misconception_id = tagged_skill_misconception_id
+
+    def _register_all_translatable_fields(self):
+        """Register all the translatable fields of the AnswerGroup."""
+
+        self._register_translatable_field(
+            translation_domain.TRANSLATABLE_CONTENT_FORMAT_OBJECT, outcome)
+        for rule_spec in self.rule_specs:
+            self._register_translatable_field(
+                translation_domain.TRANSLATABLE_CONTENT_FORMAT_OBJECT,
+                rule_spec)
 
     def to_dict(self):
         """Returns a dict representing this AnswerGroup domain object.
@@ -258,17 +269,23 @@ class AnswerGroup:
         return answer_group_dict
 
 
-class Hint:
+class Hint(translation_domain.BaseTranslatableObject):
     """Value object representing a hint."""
 
     def __init__(self, hint_content):
         """Constructs a Hint domain object.
 
         Args:
-            hint_content: SubtitledHtml. The hint text and ID referring to the
-                other assets for this content.
+            hint_content: TranslatableContent. The hint text and ID referring
+                to the other assets for this content.
         """
         self.hint_content = hint_content
+
+    def _register_all_translatable_fields(self):
+        """Register all translatable fields of the Hint."""
+        self._register_translatable_field(
+            translation_domain.TRANSLATABLE_CONTENT_FORMAT_HTML,
+            self.hint_content)
 
     def to_dict(self):
         """Returns a dict representing this Hint domain object.
@@ -290,7 +307,7 @@ class Hint:
         Returns:
             Hint. The corresponding Hint domain object.
         """
-        hint_content = SubtitledHtml.from_dict(hint_dict['hint_content'])
+        hint_content = translation_domain.TranslatableContent.from_dict(hint_dict['hint_content'])
         hint_content.validate()
         return cls(hint_content)
 
@@ -316,7 +333,7 @@ class Hint:
         return hint_dict
 
 
-class Solution:
+class Solution(translation_domain.BaseTranslatableObject):
     """Value object representing a solution.
 
     A solution consists of answer_is_exclusive, correct_answer and an
@@ -341,14 +358,19 @@ class Solution:
                 correct_answer is determined by the value of
                 BaseInteraction.answer_type. Some examples for the types are
                 list(set(str)), list(str), str, dict(str, str), etc.
-            explanation: SubtitledHtml. Contains text and text id to link audio
-                translations for the solution's explanation.
+            explanation: TranslatableContent. Contains text and text id to link
+                audio translations for the solution's explanation.
         """
         self.answer_is_exclusive = answer_is_exclusive
         self.correct_answer = (
             interaction_registry.Registry.get_interaction_by_id(
                 interaction_id).normalize_answer(correct_answer))
         self.explanation = explanation
+
+    def _register_all_translatable_fields(self):
+        self._register_translatable_field(
+            translation_domain.TRANSLATABLE_CONTENT_FORMAT_HTML,
+            self.explanation)
 
     def to_dict(self):
         """Returns a dict representing this Solution domain object.
@@ -373,7 +395,8 @@ class Solution:
         Returns:
             Solution. The corresponding Solution domain object.
         """
-        explanation = SubtitledHtml.from_dict(solution_dict['explanation'])
+        explanation = translation_domain.TranslatableContent.from_dict(
+            solution_dict['explanation'])
         explanation.validate()
         return cls(
             interaction_id,
@@ -459,7 +482,7 @@ class Solution:
         return solution_dict
 
 
-class InteractionInstance:
+class InteractionInstance(translation_domain.BaseTranslatableObject):
     """Value object for an instance of an interaction."""
 
     # The default interaction used for a new state.
@@ -573,6 +596,39 @@ class InteractionInstance:
         self.confirmed_unclassified_answers = confirmed_unclassified_answers
         self.hints = hints
         self.solution = solution
+
+    def _register_all_translatable_fields(self):
+        """Register all the translatable fields of the InteractionInstance.
+        """
+        if self.default_outcome is not None:
+            self._register_translatable_field(
+                translation_domain.TRANSLATABLE_CONTENT_FORMAT_OBJECT,
+                self.default_outcome)
+        if self.solution is not None:
+            self._register_translatable_field(
+                translation_domain.TRANSLATABLE_CONTENT_FORMAT_OBJECT,
+                self.solution)
+
+        for answer_group in self.answer_groups:
+            self._register_translatable_field(
+                translation_domain.TRANSLATABLE_CONTENT_FORMAT_OBJECT,
+                answer_group)
+            if self.id not in ['TextInput', 'SetInput']:
+                continue
+            for rule_spec in answer_group.rule_specs:
+                self._register_translatable_field(
+                    translation_domain.TRANSLATABLE_CONTENT_FORMAT_OBJECT,
+                    rule_spec)
+
+        for hint in self.hints:
+            self._register_translatable_field(
+                translation_domain.TRANSLATABLE_CONTENT_FORMAT_OBJECT, hint)
+
+        for ca_dict in self.customisation_args.values():
+            self._register_translatable_field(
+                translation_domain.TRANSLATABLE_CONTENT_FORMAT_OBJECT,
+                ca_dict)
+
 
     @property
     def is_terminal(self):
@@ -768,8 +824,9 @@ class InteractionInstance:
         """
         default_outcome = Outcome(
             default_dest_state_name,
-            SubtitledHtml.create_default_subtitled_html(
-                feconf.DEFAULT_OUTCOME_CONTENT_ID), False, {}, None, None)
+            translation_domain.TranslatableContent.create_new(
+                translation_domain.TRANSLATABLE_CONTENT_FORMAT_HTML, ''),
+            False, {}, None, None)
 
         return cls(
             cls._DEFAULT_INTERACTION_ID, {}, [], default_outcome, [], [], None)
@@ -928,7 +985,7 @@ class InteractionInstance:
         return customization_args
 
 
-class InteractionCustomizationArg:
+class InteractionCustomizationArg(translation_domain.BaseTranslatableObject):
     """Object representing an interaction's customization argument.
     Any SubtitledHtml or SubtitledUnicode values in the customization argument
     value are represented as their respective domain objects here, rather than a
@@ -944,6 +1001,32 @@ class InteractionCustomizationArg:
         """
         self.value = value
         self.schema = schema
+
+    def _register_all_translatable_fields(self):
+        subtitled_htmls = ca_dict.get_subtitled_html()
+        for subtitled_html in subtitled_htmls:
+            html_string = subtitled_html.html
+            # Make sure we don't include content that only consists of
+            # numbers. See issue #13055.
+            if html_string != '' and not html_string.isnumeric():
+                content_id_to_translatable_item[
+                    subtitled_html.content_id
+                ] = TranslatableItem(
+                    html_string,
+                    TranslatableItem.DATA_FORMAT_HTML,
+                    TranslatableItem.CONTENT_TYPE_INTERACTION,
+                    self.interaction.id)
+
+        subtitled_unicodes = ca_dict.get_subtitled_unicode()
+        for subtitled_unicode in subtitled_unicodes:
+            if subtitled_unicode.unicode_str != '':
+                content_id_to_translatable_item[
+                    subtitled_unicode.content_id
+                ] = TranslatableItem(
+                    subtitled_unicode.unicode_str,
+                    TranslatableItem.DATA_FORMAT_UNICODE_STRING,
+                    TranslatableItem.CONTENT_TYPE_INTERACTION,
+                    self.interaction.id)
 
     def to_customization_arg_dict(self):
         """Converts a InteractionCustomizationArgument domain object to a
@@ -1205,7 +1288,7 @@ class InteractionCustomizationArg:
         return result
 
 
-class Outcome:
+class Outcome(translation_domain.BaseTranslatableObject):
     """Value object representing an outcome of an interaction. An outcome
     consists of a destination state, feedback to show the user, and any
     parameter changes.
@@ -1237,7 +1320,7 @@ class Outcome:
         Returns:
             Outcome. The corresponding Outcome domain object.
         """
-        feedback = SubtitledHtml.from_dict(outcome_dict['feedback'])
+        feedback = translation_domain.TranslatableContent.from_dict(outcome_dict['feedback'])
         feedback.validate()
         return cls(
             outcome_dict['dest'],
@@ -1258,8 +1341,8 @@ class Outcome:
 
         Args:
             dest: str. The name of the destination state.
-            feedback: SubtitledHtml. Feedback to give to the user if this rule
-                is triggered.
+            feedback: TranslatableContent. Feedback to give to the user if this
+                rule is triggered.
             labelled_as_correct: bool. Whether this outcome has been labelled
                 by the creator as corresponding to a "correct" answer.
             param_changes: list(ParamChange). List of exploration-level
@@ -1291,6 +1374,11 @@ class Outcome:
         # An optional skill id whose concept card would be shown to the learner
         # when the learner receives this outcome.
         self.missing_prerequisite_skill_id = missing_prerequisite_skill_id
+
+    def _register_all_translatable_fields(self):
+        self._register_translatable_field(
+            translation_domain.TRANSLATABLE_CONTENT_FORMAT_HTML,
+            self.feedback)
 
     def validate(self):
         """Validates various properties of the Outcome.
@@ -2008,7 +2096,7 @@ class RecordedVoiceovers:
             self.voiceovers_mapping.pop(content_id, None)
 
 
-class RuleSpec:
+class RuleSpec(translation_domain.BaseTranslatableObject):
     """Value object representing a rule specification."""
 
     def __init__(self, rule_type, inputs):
@@ -2026,6 +2114,28 @@ class RuleSpec:
         """
         self.rule_type = rule_type
         self.inputs = inputs
+
+    def _register_all_translatable_fields(self):
+        if 'normalizedStrSet' in input_value:
+            content_id_to_translatable_item[
+                input_value['contentId']
+            ] = TranslatableItem(
+                input_value['normalizedStrSet'],
+                TranslatableItem
+                .DATA_FORMAT_SET_OF_NORMALIZED_STRING,
+                TranslatableItem.CONTENT_TYPE_RULE,
+                self.interaction.id,
+                rule_spec.rule_type)
+        if 'unicodeStrSet' in input_value:
+            content_id_to_translatable_item[
+                input_value['contentId']
+            ] = TranslatableItem(
+                input_value['unicodeStrSet'],
+                TranslatableItem
+                .DATA_FORMAT_SET_OF_UNICODE_STRING,
+                TranslatableItem.CONTENT_TYPE_RULE,
+                self.interaction.id,
+                rule_spec.rule_type)
 
     def to_dict(self):
         """Returns a dict representing this RuleSpec domain object.
@@ -2407,7 +2517,7 @@ class TranslatableItem:
         }
 
 
-class State:
+class State(translation_domain.BaseTranslatableObject):
     """Domain object for a state."""
 
     def __init__(
@@ -2418,8 +2528,8 @@ class State:
         """Initializes a State domain object.
 
         Args:
-            content: SubtitledHtml. The contents displayed to the reader in this
-                state.
+            content: TranslatableContent. The contents displayed to the reader
+                in this state.
             param_changes: list(ParamChange). Parameter changes associated with
                 this state.
             interaction: InteractionInstance. The interaction instance
@@ -2461,6 +2571,14 @@ class State:
         self.card_is_checkpoint = card_is_checkpoint
         self.next_content_id_index = next_content_id_index
 
+    def _register_all_translatable_fields(self) -> None:
+        """Register all translatable fields of the State."""
+        self._register_translatable_field(
+            translation_domain.TRANSLATABLE_CONTENT_FORMAT_HTML, self.content)
+        self._register_translatable_field(
+            translation_domain.TRANSLATABLE_CONTENT_FORMAT_OBJECT,
+            self.interaction)
+
     def validate(self, exp_param_specs_dict, allow_null_interaction):
         """Validates various properties of the State.
 
@@ -2491,28 +2609,28 @@ class State:
         elif self.interaction.id is not None:
             self.interaction.validate(exp_param_specs_dict)
 
-        content_id_list = []
-        content_id_list.append(self.content.content_id)
-        for answer_group in self.interaction.answer_groups:
-            feedback_content_id = answer_group.outcome.feedback.content_id
-            if feedback_content_id in content_id_list:
-                raise utils.ValidationError(
-                    'Found a duplicate content id %s' % feedback_content_id)
-            content_id_list.append(feedback_content_id)
+        # content_id_list = []
+        # content_id_list.append(self.content.content_id)
+        # for answer_group in self.interaction.answer_groups:
+        #     feedback_content_id = answer_group.outcome.feedback.content_id
+        #     if feedback_content_id in content_id_list:
+        #         raise utils.ValidationError(
+        #             'Found a duplicate content id %s' % feedback_content_id)
+        #     content_id_list.append(feedback_content_id)
 
-            for rule_spec in answer_group.rule_specs:
-                for param_name, value in rule_spec.inputs.items():
-                    param_type = (
-                        interaction_registry.Registry.get_interaction_by_id(
-                            self.interaction.id
-                        ).get_rule_param_type(rule_spec.rule_type, param_name))
+        #     for rule_spec in answer_group.rule_specs:
+        #         for param_name, value in rule_spec.inputs.items():
+        #             param_type = (
+        #                 interaction_registry.Registry.get_interaction_by_id(
+        #                     self.interaction.id
+        #                 ).get_rule_param_type(rule_spec.rule_type, param_name))
 
-                    if issubclass(param_type, objects.BaseTranslatableObject):
-                        if value['contentId'] in content_id_list:
-                            raise utils.ValidationError(
-                                'Found a duplicate content '
-                                'id %s' % value['contentId'])
-                        content_id_list.append(value['contentId'])
+        #             if issubclass(param_type, objects.BaseTranslatableObject):
+        #                 if value['contentId'] in content_id_list:
+        #                     raise utils.ValidationError(
+        #                         'Found a duplicate content '
+        #                         'id %s' % value['contentId'])
+        #                 content_id_list.append(value['contentId'])
 
         if self.interaction.default_outcome:
             default_outcome_content_id = (
@@ -2631,7 +2749,7 @@ class State:
                 android_validation_constants.VALID_RTE_COMPONENTS))
 
         if self.content and require_valid_component_names(
-                self.content.html):
+                self.content.value):
             return False
 
         return self.interaction.is_rte_content_supported_on_android(
@@ -2833,7 +2951,7 @@ class State:
         """Update the content of this state.
 
         Args:
-            content: SubtitledHtml. Representation of updated content.
+            content: TranslatableContent. Representation of updated content.
         """
         # TODO(sll): Must sanitize all content in RTE component attrs.
         self.content = content
@@ -3310,7 +3428,7 @@ class State:
         Returns:
             State. The corresponding State domain object.
         """
-        content = SubtitledHtml.from_dict(state_dict['content'])
+        content = translation_domain.TranslatableContent.from_dict(state_dict['content'])
         content.validate()
         return cls(
             content,
@@ -3338,11 +3456,8 @@ class State:
         Returns:
             State. The corresponding State domain object.
         """
-        content_html = (
-            feconf.DEFAULT_INIT_STATE_CONTENT_STR if is_initial_state else '')
-        content_id = feconf.DEFAULT_NEW_STATE_CONTENT_ID
         return cls(
-            SubtitledHtml(content_id, content_html),
+            translation_domain.TranslatableContent.create_new('html', ''),
             [],
             InteractionInstance.create_default_interaction(
                 default_dest_state_name),
@@ -3495,5 +3610,5 @@ class State:
         html_list = (
             self.written_translations.get_all_html_content_strings() +
             self.interaction.get_all_html_content_strings() + [
-                self.content.html])
+                self.content.value])
         return html_list

@@ -35,6 +35,7 @@ from core.domain import interaction_registry
 from core.domain import rules_registry
 from core.domain import state_domain
 from core.domain import translatable_object_registry
+from core.domain import translation_domain
 from core.tests import test_utils
 
 
@@ -1618,6 +1619,17 @@ class StateDomainUnitTests(test_utils.GenericTestBase):
         init_state.add_translation('content', 'hi', '<p>Translated text</p>')
 
         self.assertEqual(init_state.get_translation_counts(), {'hi': 1})
+
+    def test_get_all_translatable_contents_returns_corrct_items(self):
+        exploration = exp_domain.Exploration.create_default_exploration('0')
+        init_state = exploration.states[exploration.init_state_name]
+        init_state.update_content(
+            translation_domain.TranslatableContent.create_new(
+                'html',
+                '<p>This is content</p>'
+            ))
+        x = exploration.get_translatable_fields()
+
 
     def test_get_translation_counts_returns_correct_value(self):
         state = state_domain.State.create_default_state(None)
