@@ -56,6 +56,7 @@ class BaseTranslatableObject:
     ) -> None:
         """Base method to register a translatable field in an entity.
         """
+        content_hash = {}
         if field_type == TRANSLATABLE_CONTENT_FORMAT_OBJECT:
             translatable_fields = translatable_field.get_translatable_fields()
             for content_type, contents in translatable_fields.items():
@@ -70,8 +71,12 @@ class BaseTranslatableObject:
             raise Exception("Expected field type to be %s but found %s" % (
                 field_type, translatable_field.type))
 
+        if translatable_field.hash in content_hash:
+            return
+
         if translatable_field.value != '':
             self._translatable_contents[field_type].append(translatable_field)
+            content_hash[translatable_field.hash] = True
 
     def get_translatable_fields(self) -> None:
         """Base method to get all the translatable fields for an entity.
@@ -187,6 +192,9 @@ class TranslatableContent:
 
         if self.type == TRANSLATABLE_CONTENT_FORMAT_HTML:
             self.value = html_cleaner.clean(self.value)
+
+    def __repr__(self):
+        return ("(%s, %s, %s)") % (self.type, self.value, self.hash)
 
 
 

@@ -182,12 +182,9 @@ class SubtitledUnicode(BaseObject):
         return {
             'type': 'dict',
             'properties': [{
-                'name': 'content_id',
+                'name': 'hash',
                 'schema': {
-                    # The default content id is none. However, it should be
-                    # populated before being saved (SubtitledUnicode in
-                    # state_domain has validation checks for this).
-                    'type': 'unicode_or_none'
+                    'type': 'unicode'
                 }
             }, {
                 'name': 'unicode_str',
@@ -214,12 +211,9 @@ class SubtitledHtml(BaseObject):
         return {
             'type': 'dict',
             'properties': [{
-                'name': 'content_id',
+                'name': 'hash',
                 'schema': {
-                    # The default content id is none. However, it should be
-                    # populated before being saved (SubtitledHtml in
-                    # state_domain has validation checks for this).
-                    'type': 'unicode_or_none'
+                    'type': 'unicode'
                 }
             }, {
                 'name': 'html',
@@ -1536,10 +1530,7 @@ class BaseTranslatableObject(BaseObject):
         return {
             'type': 'dict',
             'properties': [{
-                'name': 'contentId',
-                # The default content id is none. However, it should be
-                # populated before being saved. The normalize() method has
-                # validation checks for this.
+                'name': 'hash',
                 'schema': {'type': 'unicode'}
             }, {
                 'name': cls._value_key_name,
@@ -1554,7 +1545,7 @@ class TranslatableUnicodeString(BaseTranslatableObject):
     _value_key_name = 'unicodeStr'
     _value_schema = UnicodeString.get_schema()
     default_value = {
-        'contentId': None,
+        'hash': '',
         'unicodeStr': '',
     }
 
@@ -1565,7 +1556,7 @@ class TranslatableHtml(BaseTranslatableObject):
     _value_key_name = 'html'
     _value_schema = Html.get_schema()
     default_value = {
-        'contentId': None,
+        'hash': '',
         'html': '',
     }
 
@@ -1576,7 +1567,7 @@ class TranslatableSetOfNormalizedString(BaseTranslatableObject):
     _value_key_name = 'normalizedStrSet'
     _value_schema = SetOfNormalizedString.get_schema()
     default_value = {
-        'contentId': None,
+        'hash': '',
         'normalizedStrSet': [],
     }
 
@@ -1587,7 +1578,7 @@ class TranslatableSetOfUnicodeString(BaseTranslatableObject):
     _value_key_name = 'unicodeStrSet'
     _value_schema = SetOfUnicodeString.get_schema()
     default_value = {
-        'contentId': None,
+        'hash': '',
         'unicodeStrSet': [],
     }
 

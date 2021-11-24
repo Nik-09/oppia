@@ -48,7 +48,7 @@ class Continue(base.BaseInteraction):
             'obj_type': 'SubtitledUnicode'
         },
         'default_value': {
-            'content_id': None,
+            'hash': 'LgJiOWb5ORas',
             'unicode_str': 'Continue'
         },
     }]

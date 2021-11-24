@@ -41,7 +41,7 @@ class NumericExpressionInput(base.BaseInteraction):
             'obj_type': 'SubtitledUnicode'
         },
         'default_value': {
-            'content_id': None,
+            'hash': '',
             'unicode_str': 'Type an expression here, using only numbers.'
         }
     }, {

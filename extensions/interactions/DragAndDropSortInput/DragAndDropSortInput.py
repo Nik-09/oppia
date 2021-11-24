@@ -66,7 +66,7 @@ class DragAndDropSortInput(base.BaseInteraction):
             }
         },
         'default_value': [{
-            'content_id': None,
+            'hash': '',
             'html': ''
         }],
     }, {

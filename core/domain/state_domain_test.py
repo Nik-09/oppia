@@ -1623,12 +1623,75 @@ class StateDomainUnitTests(test_utils.GenericTestBase):
     def test_get_all_translatable_contents_returns_corrct_items(self):
         exploration = exp_domain.Exploration.create_default_exploration('0')
         init_state = exploration.states[exploration.init_state_name]
+        # Set the content.
         init_state.update_content(
             translation_domain.TranslatableContent.create_new(
                 'html',
                 '<p>This is content</p>'
             ))
+        # Set the multiple choice interaction.
+        init_state.update_interaction_id('TextInput')
+        state_interaction_cust_args = {
+            'placeholder': {
+                'value': {
+                    'hash': '123',
+                    'unicode_str': 'nikhil'
+                }
+            },
+            'rows': {'value': 1}
+        }
+        init_state.update_interaction_customization_args(
+            state_interaction_cust_args)
+        # Set the default outcome.
+        default_outcome = state_domain.Outcome(
+            'Introduction', translation_domain.TranslatableContent.create_new(
+                'html', '<p>The default outcome.</p>'),
+            False, [], None, None
+        )
+        init_state.update_interaction_default_outcome(default_outcome)
+        state_answer_group = state_domain.AnswerGroup(
+            state_domain.Outcome(
+                exploration.init_state_name,
+                translation_domain.TranslatableContent.create_new(
+                    'html', '<p>Feedback</p>'),
+                False, [], None, None),
+            [
+                state_domain.RuleSpec(
+                    'Contains',
+                    {
+                        'x': {
+                            'hash': 'rule_input_Contains',
+                            'normalizedStrSet': ['Test']
+                            }
+                    })
+            ], [], None
+        )
+        hints_list = [
+            state_domain.Hint(
+                translation_domain.TranslatableContent.create_new(
+                    'html', '<p>hint one</p>'))]
+        init_state.update_interaction_hints(hints_list)
+        solution_dict = {
+            'answer_is_exclusive': False,
+            'correct_answer': 'helloworld!',
+            'explanation': {
+                'hash': 'solution',
+                'value': '<p>hello_world is a string</p>',
+                'type': 'html'
+            },
+        }
+
+        solution = state_domain.Solution.from_dict(
+            init_state.interaction.id, solution_dict)
+
+        init_state.update_interaction_solution(solution)
+
+
+        exploration.init_state.update_interaction_answer_groups(
+            [state_answer_group])
         x = exploration.get_translatable_fields()
+        print(x)
+        print('nikhil\n'*10)
 
 
     def test_get_translation_counts_returns_correct_value(self):
