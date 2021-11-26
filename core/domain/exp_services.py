@@ -461,69 +461,12 @@ def apply_change_list(exploration_id, change_list):
                             'Expected card_is_checkpoint to be a ' +
                             'bool, received %s' % change.new_value)
                     state.update_card_is_checkpoint(change.new_value)
-                elif (change.property_name ==
-                      exp_domain.STATE_PROPERTY_RECORDED_VOICEOVERS):
-                    if not isinstance(change.new_value, dict):
-                        raise Exception(
-                            'Expected recorded_voiceovers to be a dict, '
-                            'received %s' % change.new_value)
-                    # Explicitly convert the duration_secs value from
-                    # int to float. Reason for this is the data from
-                    # the frontend will be able to match the backend
-                    # state model for Voiceover properly. Also js
-                    # treats any number that can be float and int as
-                    # int (no explicit types). For example,
-                    # 10.000 is not 10.000 it is 10.
-                    new_voiceovers_mapping = (
-                        change.new_value['voiceovers_mapping'])
-                    language_codes_to_audio_metadata = (
-                        new_voiceovers_mapping.values())
-                    for language_codes in language_codes_to_audio_metadata:
-                        for audio_metadata in language_codes.values():
-                            audio_metadata['duration_secs'] = (
-                                float(audio_metadata['duration_secs'])
-                            )
-                    recorded_voiceovers = (
-                        state_domain.RecordedVoiceovers.from_dict(
-                            change.new_value))
-                    state.update_recorded_voiceovers(recorded_voiceovers)
-                elif (change.property_name ==
-                      exp_domain.STATE_PROPERTY_WRITTEN_TRANSLATIONS):
-                    if not isinstance(change.new_value, dict):
-                        raise Exception(
-                            'Expected written_translations to be a dict, '
-                            'received %s' % change.new_value)
-                    cleaned_written_translations_dict = (
-                        state_domain.WrittenTranslations
-                        .convert_html_in_written_translations(
-                            change.new_value, html_cleaner.clean))
-                    written_translations = (
-                        state_domain.WrittenTranslations.from_dict(
-                            cleaned_written_translations_dict))
-                    state.update_written_translations(written_translations)
             elif change.cmd == exp_domain.DEPRECATED_CMD_ADD_TRANSLATION:
                 # DEPRECATED: This command is deprecated. Please do not use.
                 # The command remains here to support old suggestions.
                 exploration.states[change.state_name].add_translation(
                     change.content_id, change.language_code,
                     change.translation_html)
-            elif change.cmd == exp_domain.CMD_ADD_WRITTEN_TRANSLATION:
-                exploration.states[change.state_name].add_written_translation(
-                    change.content_id, change.language_code,
-                    change.translation_html, change.data_format)
-            elif (change.cmd ==
-                  exp_domain.CMD_MARK_WRITTEN_TRANSLATION_AS_NEEDING_UPDATE):
-                exploration.states[
-                    change.state_name
-                ].mark_written_translation_as_needing_update(
-                    change.content_id,
-                    change.language_code
-                )
-            elif (change.cmd ==
-                  exp_domain.CMD_MARK_WRITTEN_TRANSLATIONS_AS_NEEDING_UPDATE):
-                exploration.states[
-                    change.state_name
-                ].mark_written_translations_as_needing_update(change.content_id)
             elif change.cmd == exp_domain.CMD_EDIT_EXPLORATION_PROPERTY:
                 if change.property_name == 'title':
                     exploration.update_title(change.new_value)

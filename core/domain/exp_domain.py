@@ -54,10 +54,7 @@ STATE_PROPERTY_PARAM_CHANGES = 'param_changes'
 STATE_PROPERTY_CONTENT = 'content'
 STATE_PROPERTY_SOLICIT_ANSWER_DETAILS = 'solicit_answer_details'
 STATE_PROPERTY_CARD_IS_CHECKPOINT = 'card_is_checkpoint'
-STATE_PROPERTY_RECORDED_VOICEOVERS = 'recorded_voiceovers'
-STATE_PROPERTY_WRITTEN_TRANSLATIONS = 'written_translations'
 STATE_PROPERTY_INTERACTION_ID = 'widget_id'
-STATE_PROPERTY_NEXT_CONTENT_ID_INDEX = 'next_content_id_index'
 STATE_PROPERTY_LINKED_SKILL_ID = 'linked_skill_id'
 STATE_PROPERTY_INTERACTION_CUST_ARGS = 'widget_customization_args'
 STATE_PROPERTY_INTERACTION_ANSWER_GROUPS = 'answer_groups'
@@ -250,10 +247,7 @@ class ExplorationChange(change_domain.BaseChange):
         STATE_PROPERTY_CONTENT,
         STATE_PROPERTY_SOLICIT_ANSWER_DETAILS,
         STATE_PROPERTY_CARD_IS_CHECKPOINT,
-        STATE_PROPERTY_RECORDED_VOICEOVERS,
-        STATE_PROPERTY_WRITTEN_TRANSLATIONS,
         STATE_PROPERTY_INTERACTION_ID,
-        STATE_PROPERTY_NEXT_CONTENT_ID_INDEX,
         STATE_PROPERTY_LINKED_SKILL_ID,
         STATE_PROPERTY_INTERACTION_CUST_ARGS,
         STATE_PROPERTY_INTERACTION_STICKY,
@@ -298,27 +292,6 @@ class ExplorationChange(change_domain.BaseChange):
         'required_attribute_names': [
             'state_name', 'content_id', 'language_code', 'content_html',
             'translation_html'],
-        'optional_attribute_names': [],
-        'user_id_attribute_names': []
-    }, {
-        'name': CMD_ADD_WRITTEN_TRANSLATION,
-        'required_attribute_names': [
-            'state_name', 'content_id', 'language_code', 'content_html',
-            'translation_html', 'data_format'],
-        'optional_attribute_names': [],
-        'user_id_attribute_names': []
-    }, {
-        'name': CMD_MARK_WRITTEN_TRANSLATION_AS_NEEDING_UPDATE,
-        'required_attribute_names': [
-            'content_id',
-            'language_code',
-            'state_name'
-        ],
-        'optional_attribute_names': [],
-        'user_id_attribute_names': []
-    }, {
-        'name': CMD_MARK_WRITTEN_TRANSLATIONS_AS_NEEDING_UPDATE,
-        'required_attribute_names': ['content_id', 'state_name'],
         'optional_attribute_names': [],
         'user_id_attribute_names': []
     }, {
@@ -620,7 +593,7 @@ class Exploration(translation_domain.BaseTranslatableObject):
         self.correctness_feedback_enabled = correctness_feedback_enabled
 
     def _register_all_translatable_fields(self) -> None:
-        """Register all translatable contents in an exploration."""
+        """Register all translatable contents for exploration."""
         for state in self.states.values():
             self._register_translatable_field(
                 translation_domain.TRANSLATABLE_CONTENT_FORMAT_OBJECT, state)
@@ -1177,26 +1150,6 @@ class Exploration(translation_domain.BaseTranslatableObject):
                 'It is impossible to complete the exploration from the '
                 'following states: %s' % ', '.join(dead_end_states))
 
-    # TODO: Remove this at the end.
-    # def get_content_html(self, state_name, content_id):
-    #     """Return the content for a given content id of a state.
-
-    #     Args:
-    #         state_name: str. The name of the state.
-    #         content_id: str. The id of the content.
-
-    #     Returns:
-    #         str. The html content corresponding to the given content id of a
-    #         state.
-
-    #     Raises:
-    #         ValueError. The given state_name does not exist.
-    #     """
-    #     if state_name not in self.states:
-    #         raise ValueError('State %s does not exist' % state_name)
-
-    #     return self.states[state_name].get_content_html(content_id)
-
     # Derived attributes of an exploration.
     @property
     def init_state(self):
@@ -1464,25 +1417,25 @@ class Exploration(translation_domain.BaseTranslatableObject):
 
         del self.states[state_name]
 
-    def get_translatable_text(self, language_code):
-        """Returns all the contents which needs translation in the given
-        language.
+    # def get_translatable_text(self, language_code):
+    #     """Returns all the contents which needs translation in the given
+    #     language.
 
-        Args:
-            language_code: str. The language code in which translation is
-                required.
+    #     Args:
+    #         language_code: str. The language code in which translation is
+    #             required.
 
-        Returns:
-            dict(str, dict(str, str)). A dict where state_name is the key and a
-            dict with content_id as the key and html content as value.
-        """
-        state_names_to_content_id_mapping = {}
-        for state_name, state in self.states.items():
-            state_names_to_content_id_mapping[state_name] = (
-                state.get_content_id_mapping_needing_translations(
-                    language_code))
+    #     Returns:
+    #         dict(str, dict(str, str)). A dict where state_name is the key and a
+    #         dict with content_id as the key and html content as value.
+    #     """
+    #     state_names_to_content_id_mapping = {}
+    #     for state_name, state in self.states.items():
+    #         state_names_to_content_id_mapping[state_name] = (
+    #             state.get_content_id_mapping_needing_translations(
+    #                 language_code))
 
-        return state_names_to_content_id_mapping
+    #     return state_names_to_content_id_mapping
 
     def get_trainable_states_dict(self, old_states, exp_versions_diff):
         """Retrieves the state names of all trainable states in an exploration
@@ -1560,22 +1513,22 @@ class Exploration(translation_domain.BaseTranslatableObject):
 
         return language_code_list
 
-    def get_translation_counts(self):
-        """Returns a dict representing the number of translations available in a
-        language for which there exists at least one translation in the
-        exploration.
+    # def get_translation_counts(self):
+    #     """Returns a dict representing the number of translations available in a
+    #     language for which there exists at least one translation in the
+    #     exploration.
 
-        Returns:
-            dict(str, int). A dict with language code as a key and number of
-            translation available in that language as the value.
-        """
-        exploration_translation_counts = collections.defaultdict(int)
-        for state in self.states.values():
-            state_translation_counts = state.get_translation_counts()
-            for language, count in state_translation_counts.items():
-                exploration_translation_counts[language] += count
+    #     Returns:
+    #         dict(str, int). A dict with language code as a key and number of
+    #         translation available in that language as the value.
+    #     """
+    #     exploration_translation_counts = collections.defaultdict(int)
+    #     for state in self.states.values():
+    #         state_translation_counts = state.get_translation_counts()
+    #         for language, count in state_translation_counts.items():
+    #             exploration_translation_counts[language] += count
 
-        return dict(exploration_translation_counts)
+    #     return dict(exploration_translation_counts)
 
     def get_content_count(self):
         """Returns the total number of distinct content fields available in the
@@ -2736,7 +2689,6 @@ class ExplorationChangeMergeVerifier:
     # cust args changes.
     PROPERTIES_CONFLICTING_CUST_ARGS_CHANGES = [
         STATE_PROPERTY_INTERACTION_SOLUTION,
-        STATE_PROPERTY_RECORDED_VOICEOVERS,
         STATE_PROPERTY_INTERACTION_ANSWER_GROUPS]
 
     # PROPERTIES_CONFLICTING_ANSWER_GROUPS_CHANGES: List of the properties
@@ -2747,7 +2699,6 @@ class ExplorationChangeMergeVerifier:
     # answer groups changes.
     PROPERTIES_CONFLICTING_ANSWER_GROUPS_CHANGES = [
         STATE_PROPERTY_INTERACTION_SOLUTION,
-        STATE_PROPERTY_RECORDED_VOICEOVERS,
         STATE_PROPERTY_INTERACTION_CUST_ARGS]
 
     # PROPERTIES_CONFLICTING_SOLUTION_CHANGES: List of the properties
@@ -2758,7 +2709,6 @@ class ExplorationChangeMergeVerifier:
     # solution changes.
     PROPERTIES_CONFLICTING_SOLUTION_CHANGES = [
         STATE_PROPERTY_INTERACTION_ANSWER_GROUPS,
-        STATE_PROPERTY_RECORDED_VOICEOVERS,
         STATE_PROPERTY_INTERACTION_CUST_ARGS]
 
     # PROPERTIES_CONFLICTING_VOICEOVERS_CHANGES: List of the properties
@@ -2771,7 +2721,6 @@ class ExplorationChangeMergeVerifier:
         STATE_PROPERTY_CONTENT,
         STATE_PROPERTY_INTERACTION_SOLUTION,
         STATE_PROPERTY_INTERACTION_HINTS,
-        STATE_PROPERTY_WRITTEN_TRANSLATIONS,
         STATE_PROPERTY_INTERACTION_ANSWER_GROUPS,
         STATE_PROPERTY_INTERACTION_DEFAULT_OUTCOME,
         STATE_PROPERTY_INTERACTION_CUST_ARGS]
@@ -2780,7 +2729,6 @@ class ExplorationChangeMergeVerifier:
     # in which if there are any changes then they are always mergeable.
     NON_CONFLICTING_PROPERTIES = [
         STATE_PROPERTY_UNCLASSIFIED_ANSWERS,
-        STATE_PROPERTY_NEXT_CONTENT_ID_INDEX,
         STATE_PROPERTY_LINKED_SKILL_ID,
         STATE_PROPERTY_CARD_IS_CHECKPOINT]
 
@@ -2877,8 +2825,6 @@ class ExplorationChangeMergeVerifier:
                 state_name = self.new_to_old_state_names.get(change.state_name)
             self.changed_translations[state_name].add(
                 changed_property)
-            self.changed_properties[state_name].add(
-                STATE_PROPERTY_WRITTEN_TRANSLATIONS)
 
     def is_change_list_mergeable(
             self, change_list,
@@ -2958,9 +2904,7 @@ class ExplorationChangeMergeVerifier:
                     if (old_exp_states.content.html ==
                             current_exp_states.content.html):
                         if (STATE_PROPERTY_CONTENT not in
-                                self.changed_translations[state_name] and
-                                STATE_PROPERTY_RECORDED_VOICEOVERS not in
-                                self.changed_properties[state_name]):
+                                self.changed_translations[state_name]):
                             change_is_mergeable = True
                     if not self.changed_properties[state_name]:
                         change_is_mergeable = True
@@ -3060,36 +3004,6 @@ class ExplorationChangeMergeVerifier:
                         change_is_mergeable = True
                     if not self.changed_properties[state_name]:
                         change_is_mergeable = True
-                elif (change.property_name ==
-                      STATE_PROPERTY_RECORDED_VOICEOVERS):
-                    if not self.changed_properties[state_name].intersection(
-                            self.PROPERTIES_CONFLICTING_VOICEOVERS_CHANGES +
-                            [STATE_PROPERTY_RECORDED_VOICEOVERS]):
-                        change_is_mergeable = True
-                    if not self.changed_properties[state_name]:
-                        change_is_mergeable = True
-            elif change.cmd == CMD_ADD_WRITTEN_TRANSLATION:
-                state_name = state_names_of_renamed_states.get(
-                    change.state_name) or change.state_name
-                if state_name in old_to_new_state_names:
-                    # Here we will send the changelist, frontend_version,
-                    # backend_version and exploration to the admin, so
-                    # that the changes related to state renames can be
-                    # reviewed and the proper conditions can be written
-                    # to handle those cases.
-                    return False, True
-                changed_property = self._get_property_name_from_content_id(
-                    change.content_id)
-                if (changed_property not in
-                        (self.changed_properties[state_name] |
-                         self.changed_translations[state_name])):
-                    change_is_mergeable = True
-                if not self.changed_properties[state_name]:
-                    change_is_mergeable = True
-            elif change.cmd == CMD_MARK_WRITTEN_TRANSLATION_AS_NEEDING_UPDATE:
-                change_is_mergeable = True
-            elif change.cmd == CMD_MARK_WRITTEN_TRANSLATIONS_AS_NEEDING_UPDATE:
-                change_is_mergeable = True
             elif change.cmd == CMD_EDIT_EXPLORATION_PROPERTY:
                 change_is_mergeable = (
                     exp_at_change_list_version.__getattribute__(

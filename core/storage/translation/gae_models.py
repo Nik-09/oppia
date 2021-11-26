@@ -187,3 +187,77 @@ class MachineTranslationModel(base_models.BaseModel):
             'target_language_code': base_models.EXPORT_POLICY.NOT_APPLICABLE,
             'translated_text': base_models.EXPORT_POLICY.NOT_APPLICABLE
         })
+
+
+class EntityTranslationsModel(base_models.BaseModel):
+    """Model for storing entity translations."""
+    entity_id = datastore_services.StringProperty(required=True, indexed=True)
+    entity_type = datastore_services.StringProperty(required=True, indexed=True)
+    language_code = datastore_services.StringProperty(
+        required=True, indexed=True)
+    translations = datastore_services.JsonProperty(
+        required=True)
+
+    @staticmethod
+    def get_deletion_policy() -> base_models.DELETION_POLICY:
+        """Model is not associated with users."""
+        return base_models.DELETION_POLICY.NOT_APPLICABLE
+
+    @staticmethod
+    def get_model_association_to_user(
+    ) -> base_models.MODEL_ASSOCIATION_TO_USER:
+        """Model is not associated with users."""
+        return base_models.MODEL_ASSOCIATION_TO_USER.NOT_CORRESPONDING_TO_USER
+
+    @classmethod
+    def get_export_policy(cls) -> Dict[str, base_models.EXPORT_POLICY]:
+        """Model is not associated with users."""
+        return dict(super(cls, cls).get_export_policy(), **{
+            'entity_id': base_models.EXPORT_POLICY.NOT_APPLICABLE,
+            'entity_type': base_models.EXPORT_POLICY.NOT_APPLICABLE,
+            'language_code': base_models.EXPORT_POLICY.NOT_APPLICABLE,
+            'translations': base_models.EXPORT_POLICY.NOT_APPLICABLE,
+        })
+
+    @classmethod
+    def get_translations_in_language(
+        cls,
+        entity_type: str,
+        entity_id: str,
+        language_code: str
+    ):
+        model_id = cls._generate_id(entity_type, entity_id, language_code)
+        return cls.get_by_id(model_id)
+
+    @classmethod
+    def get_all_entity_translations(
+        cls,
+        entity_type: str,
+        entity_id: str
+    ):
+        return cls.query(
+            cls.entity_type == entity_type, cls.entity_id == entity_id).fetch()
+
+    @staticmethod
+    def _generate_id(
+        entity_type: str,
+        entity_id: str,
+        language_code: str
+    ):
+        return "%s-%s-%s" %(entity_type, entity_id, language_code)
+
+    @classmethod
+    def create_new(
+        cls,
+        entity_type: str,
+        entity_id: str,
+        language_code: str,
+        translations: Dict[str, Dict[str, Any]]
+    ):
+        return cls(
+            id = cls._generate_id(entity_type, entity_id, language_code),
+            entity_type=entity_type,
+            entity_id=entity_id,
+            language_code=language_code,
+            translations=translations
+        )
