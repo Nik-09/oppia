@@ -714,66 +714,7 @@ class Exploration(translation_domain.BaseTranslatableObject):
             if state_name != init_state_name])
 
         for (state_name, sdict) in exploration_dict['states'].items():
-            state = exploration.states[state_name]
-
-            state.content = state_domain.SubtitledHtml(
-                sdict['content']['content_id'], sdict['content']['html'])
-            state.content.validate()
-
-            state.param_changes = [param_domain.ParamChange(
-                pc['name'], pc['generator_id'], pc['customization_args']
-            ) for pc in sdict['param_changes']]
-
-            for pc in state.param_changes:
-                if pc.name not in exploration.param_specs:
-                    raise Exception(
-                        'Parameter %s was used in a state but not '
-                        'declared in the exploration param_specs.' % pc.name)
-
-            idict = sdict['interaction']
-            interaction_answer_groups = [
-                state_domain.AnswerGroup.from_dict(group)
-                for group in idict['answer_groups']]
-
-            default_outcome = (
-                state_domain.Outcome.from_dict(idict['default_outcome'])
-                if idict['default_outcome'] is not None else None)
-
-            solution = (
-                state_domain.Solution.from_dict(idict['id'], idict['solution'])
-                if idict['solution'] else None)
-
-            customization_args = (
-                state_domain.InteractionInstance.
-                convert_customization_args_dict_to_customization_args(
-                    idict['id'],
-                    idict['customization_args']
-                )
-            )
-            state.interaction = state_domain.InteractionInstance(
-                idict['id'], customization_args,
-                interaction_answer_groups, default_outcome,
-                idict['confirmed_unclassified_answers'],
-                [state_domain.Hint.from_dict(h) for h in idict['hints']],
-                solution)
-
-            state.recorded_voiceovers = (
-                state_domain.RecordedVoiceovers.from_dict(
-                    sdict['recorded_voiceovers']))
-
-            state.written_translations = (
-                state_domain.WrittenTranslations.from_dict(
-                    sdict['written_translations']))
-
-            state.next_content_id_index = sdict['next_content_id_index']
-
-            state.linked_skill_id = sdict['linked_skill_id']
-
-            state.solicit_answer_details = sdict['solicit_answer_details']
-
-            state.card_is_checkpoint = sdict['card_is_checkpoint']
-
-            exploration.states[state_name] = state
+            exploration.states[state_name] = state_domain.State.from_dict(sdict)
 
         exploration.param_changes = [
             param_domain.ParamChange.from_dict(pc)
@@ -1236,24 +1177,25 @@ class Exploration(translation_domain.BaseTranslatableObject):
                 'It is impossible to complete the exploration from the '
                 'following states: %s' % ', '.join(dead_end_states))
 
-    def get_content_html(self, state_name, content_id):
-        """Return the content for a given content id of a state.
+    # TODO: Remove this at the end.
+    # def get_content_html(self, state_name, content_id):
+    #     """Return the content for a given content id of a state.
 
-        Args:
-            state_name: str. The name of the state.
-            content_id: str. The id of the content.
+    #     Args:
+    #         state_name: str. The name of the state.
+    #         content_id: str. The id of the content.
 
-        Returns:
-            str. The html content corresponding to the given content id of a
-            state.
+    #     Returns:
+    #         str. The html content corresponding to the given content id of a
+    #         state.
 
-        Raises:
-            ValueError. The given state_name does not exist.
-        """
-        if state_name not in self.states:
-            raise ValueError('State %s does not exist' % state_name)
+    #     Raises:
+    #         ValueError. The given state_name does not exist.
+    #     """
+    #     if state_name not in self.states:
+    #         raise ValueError('State %s does not exist' % state_name)
 
-        return self.states[state_name].get_content_html(content_id)
+    #     return self.states[state_name].get_content_html(content_id)
 
     # Derived attributes of an exploration.
     @property
