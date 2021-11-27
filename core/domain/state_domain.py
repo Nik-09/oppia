@@ -1312,7 +1312,8 @@ class Outcome(translation_domain.BaseTranslatableObject):
         Returns:
             Outcome. The corresponding Outcome domain object.
         """
-        feedback = translation_domain.TranslatableContent.from_dict(outcome_dict['feedback'])
+        feedback = translation_domain.TranslatableContent.from_dict(
+            outcome_dict['feedback'])
         feedback.validate()
         return cls(
             outcome_dict['dest'],

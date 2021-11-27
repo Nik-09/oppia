@@ -1895,6 +1895,84 @@ class Exploration(translation_domain.BaseTranslatableObject):
         return states_dict
 
     @classmethod
+    def _convert_states_v49_dict_to_v50_dict(cls, states_dict):
+        """Convert from version 49 to 50. Version 50 removes,
+        recorded_voiceovers, written_translations, and next_content_id_index
+        from state_dict.
+
+        Args:
+            states_dict: dict. A dict where each key-value pair represents,
+                respectively, a state name and a dict used to initialize a
+                State domain object.
+
+        Returns:
+            dict. The converted states_dict.
+        """
+
+        for state_dict in state_dict.values():
+            del state_dict['recorded_voiceovers']
+            del state_dict['written_translations']
+            del state_dict['next_content_id_index']
+
+            state_dict['content'] = (
+                translation_domain.TranslatableContent.create_new(
+                    'html', state_dict['content']['html']).to_dict())
+
+            interaction_answer_groups = (
+                state_dict['interaction']['answer_groups'])
+            interaction_id = state_dict['interaction']['id']
+
+            for answer_group in interaction_answer_groups:
+                answer_group['outcome']['feedback'] = (
+                    translation_domain.TranslatableContent.create_new(
+                        'html', answer_group['outcome']['feedback']['html']
+                    ).to_dict())
+
+                rule_specs = (
+                    answer_group['rule_specs'])
+
+                if interaction_id not in ['TextInput', 'SetInput']:
+                    continue
+                for rule_spec_dict in answer_group['rule_specs']:
+                    if interaction_id == 'TextInput':
+                        rule_spec_dict['inputs']['x'] = {
+                            'hash': utils.convert_to_hash(
+                                rule_spec_dict['inputs']['x'], 12),
+                            'normalizedStrSet': rule_spec_dict['inputs']['x']
+                        }
+                    elif interaction_id == 'SetInput':
+                        # Convert to TranslatableSetOfUnicodeString.
+                        rule_spec_dict['inputs']['x'] = {
+                            'hash': utils.convert_to_hash(
+                                rule_spec_dict['inputs']['x'], 12),
+                            'unicodeStrSet': rule_spec_dict['inputs']['x']
+                        }
+
+            customisation_args = state_dict['interaction']['customization_args']
+            # TODO: migrate customization args.
+
+            state_dict['interaction']['default_outcome'] = (
+                translation_domain.TranslatableContent.create_new(
+                    'html',
+                    state_dict['interaction']['default_outcome']['html']
+                ).to_dict())
+
+            for hint_dict in state_dict['interaction']['hints']:
+                hint_dict['hint_content'] = (
+                    translation_domain.TranslatableContent.create_new(
+                        'html', hint_dict['hint_content']['html']
+                    ).to_dict())
+
+            solution_dict = state_dict['interaction']['solution']
+            solution_dict['explanation'] = (
+                translation_domain.TranslatableContent.create_new(
+                    'html',
+                    solution_dict['explanation']['html']
+                ).to_dict())
+
+        return states_dict
+
+    @classmethod
     def update_states_from_model(
             cls, versioned_exploration_states,
             current_states_schema_version, init_state_name):
@@ -1931,7 +2009,7 @@ class Exploration(translation_domain.BaseTranslatableObject):
     # incompatible changes are made to the exploration schema in the YAML
     # definitions, this version number must be changed and a migration process
     # put in place.
-    CURRENT_EXP_SCHEMA_VERSION = 54
+    CURRENT_EXP_SCHEMA_VERSION = 55
     EARLIEST_SUPPORTED_EXP_SCHEMA_VERSION = 46
 
     @classmethod
@@ -2115,6 +2193,28 @@ class Exploration(translation_domain.BaseTranslatableObject):
         return exploration_dict
 
     @classmethod
+    def _convert_v54_dict_to_v55_dict(cls, exploration_dict):
+        """Converts a v54 exploration dict into a v55 exploration dict.
+        Removes recorded_voiceovers, written_translations, and
+        next_content_id_index.
+
+        Args:
+            exploration_dict: dict. The dict representation of an exploration
+                with schema version v54.
+
+        Returns:
+            dict. The dict representation of the Exploration domain object,
+                following schema version v55.
+        """
+        exploration_dict['schema_version'] = 55
+
+        exploration_dict['states'] = cls._convert_states_v49_dict_to_v50_dict(
+            exploration_dict['states'])
+        exploration_dict['states_schema_version'] = 50
+
+        return exploration_dict
+
+    @classmethod
     def _migrate_to_latest_yaml_version(cls, yaml_content):
         """Return the YAML content of the exploration in the latest schema
         format.
@@ -2189,6 +2289,11 @@ class Exploration(translation_domain.BaseTranslatableObject):
             exploration_dict = cls._convert_v53_dict_to_v54_dict(
                 exploration_dict)
             exploration_schema_version = 54
+
+        if exploration_schema_version = 54:
+            exploration_dict = cls._convert_v55_dict_to_v54_dict(
+                exploration_dict)
+            exploration_schema_version = 55
 
         return exploration_dict
 
