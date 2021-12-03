@@ -1783,39 +1783,39 @@ class Exploration(translation_domain.BaseTranslatableObject):
             dict. The converted states_dict.
         """
 
-        for state_dict in states_dict.values():
-            list_of_subtitled_unicode_content_ids = []
-            interaction_customisation_args = state_dict['interaction'][
-                'customization_args']
-            if interaction_customisation_args:
-                customisation_args = (
-                    state_domain.InteractionInstance
-                    .convert_customization_args_dict_to_customization_args(
-                        state_dict['interaction']['id'],
-                        state_dict['interaction']['customization_args']))
-                for ca_name in customisation_args:
-                    list_of_subtitled_unicode_content_ids.extend(
-                        state_domain.InteractionCustomizationArg
-                        .traverse_by_schema_and_get(
-                            customisation_args[ca_name].schema,
-                            customisation_args[ca_name].value,
-                            [schema_utils.SCHEMA_OBJ_TYPE_SUBTITLED_UNICODE],
-                            lambda subtitled_unicode:
-                            subtitled_unicode.content_id
-                        )
-                    )
-                translations_mapping = (
-                    state_dict['written_translations']['translations_mapping'])
-                for content_id in translations_mapping:
-                    if content_id in list_of_subtitled_unicode_content_ids:
-                        for language_code in translations_mapping[content_id]:
-                            written_translation = (
-                                translations_mapping[content_id][language_code])
-                            written_translation['data_format'] = (
-                                schema_utils.SCHEMA_TYPE_UNICODE)
-                            written_translation['translation'] = (
-                                html_cleaner.strip_html_tags(
-                                    written_translation['translation']))
+        # for state_dict in states_dict.values():
+        #     list_of_subtitled_unicode_content_ids = []
+        #     interaction_customisation_args = state_dict['interaction'][
+        #         'customization_args']
+        #     if interaction_customisation_args:
+        #         customisation_args = (
+        #             state_domain.InteractionInstance
+        #             .convert_customization_args_dict_to_customization_args(
+        #                 state_dict['interaction']['id'],
+        #                 state_dict['interaction']['customization_args']))
+        #         for ca_name in customisation_args:
+        #             list_of_subtitled_unicode_content_ids.extend(
+        #                 state_domain.InteractionCustomizationArg
+        #                 .traverse_by_schema_and_get(
+        #                     customisation_args[ca_name].schema,
+        #                     customisation_args[ca_name].value,
+        #                     [schema_utils.SCHEMA_OBJ_TYPE_SUBTITLED_UNICODE],
+        #                     lambda subtitled_unicode:
+        #                     subtitled_unicode.content_id
+        #                 )
+        #             )
+        #         translations_mapping = (
+        #             state_dict['written_translations']['translations_mapping'])
+        #         for content_id in translations_mapping:
+        #             if content_id in list_of_subtitled_unicode_content_ids:
+        #                 for language_code in translations_mapping[content_id]:
+        #                     written_translation = (
+        #                         translations_mapping[content_id][language_code])
+        #                     written_translation['data_format'] = (
+        #                         schema_utils.SCHEMA_TYPE_UNICODE)
+        #                     written_translation['translation'] = (
+        #                         html_cleaner.strip_html_tags(
+        #                             written_translation['translation']))
         return states_dict
 
     @classmethod
@@ -1833,14 +1833,14 @@ class Exploration(translation_domain.BaseTranslatableObject):
             dict. The converted states_dict.
         """
 
-        for state_dict in states_dict.values():
-            interaction_customisation_args = state_dict['interaction'][
-                'customization_args']
-            if interaction_customisation_args:
-                state_domain.State.convert_html_fields_in_state(
-                    state_dict,
-                    html_validation_service
-                    .convert_svg_diagram_tags_to_image_tags)
+        # for state_dict in states_dict.values():
+        #     interaction_customisation_args = state_dict['interaction'][
+        #         'customization_args']
+        #     if interaction_customisation_args:
+        #         state_domain.State.convert_html_fields_in_state(
+        #             state_dict,
+        #             html_validation_service
+        #             .convert_svg_diagram_tags_to_image_tags)
         return states_dict
 
     @classmethod
@@ -1857,13 +1857,13 @@ class Exploration(translation_domain.BaseTranslatableObject):
             dict. The converted states_dict.
         """
 
-        for state_dict in states_dict.values():
-            interaction_customisation_args = state_dict['interaction'][
-                'customization_args']
-            if interaction_customisation_args:
-                state_domain.State.convert_html_fields_in_state(
-                    state_dict,
-                    html_validation_service.fix_incorrectly_encoded_chars)
+        # for state_dict in states_dict.values():
+        #     interaction_customisation_args = state_dict['interaction'][
+        #         'customization_args']
+        #     if interaction_customisation_args:
+        #         state_domain.State.convert_html_fields_in_state(
+        #             state_dict,
+        #             html_validation_service.fix_incorrectly_encoded_chars)
         return states_dict
 
     @classmethod
@@ -1909,7 +1909,7 @@ class Exploration(translation_domain.BaseTranslatableObject):
             dict. The converted states_dict.
         """
 
-        for state_dict in state_dict.values():
+        for state_dict in states_dict.values():
             del state_dict['recorded_voiceovers']
             del state_dict['written_translations']
             del state_dict['next_content_id_index']
@@ -1951,11 +1951,13 @@ class Exploration(translation_domain.BaseTranslatableObject):
             customisation_args = state_dict['interaction']['customization_args']
             # TODO: migrate customization args.
 
-            state_dict['interaction']['default_outcome'] = (
-                translation_domain.TranslatableContent.create_new(
-                    'html',
-                    state_dict['interaction']['default_outcome']['html']
-                ).to_dict())
+            if state_dict['interaction']['default_outcome'] is not None:
+                state_dict['interaction']['default_outcome']['feedback'] = (
+                    translation_domain.TranslatableContent.create_new(
+                        'html',
+                        state_dict['interaction']['default_outcome'][
+                            'feedback']['html']
+                    ).to_dict())
 
             for hint_dict in state_dict['interaction']['hints']:
                 hint_dict['hint_content'] = (
@@ -1964,11 +1966,12 @@ class Exploration(translation_domain.BaseTranslatableObject):
                     ).to_dict())
 
             solution_dict = state_dict['interaction']['solution']
-            solution_dict['explanation'] = (
-                translation_domain.TranslatableContent.create_new(
-                    'html',
-                    solution_dict['explanation']['html']
-                ).to_dict())
+            if solution_dict is not None:
+                solution_dict['explanation'] = (
+                    translation_domain.TranslatableContent.create_new(
+                        'html',
+                        solution_dict['explanation']['html']
+                    ).to_dict())
 
         return states_dict
 
@@ -2290,8 +2293,8 @@ class Exploration(translation_domain.BaseTranslatableObject):
                 exploration_dict)
             exploration_schema_version = 54
 
-        if exploration_schema_version = 54:
-            exploration_dict = cls._convert_v55_dict_to_v54_dict(
+        if exploration_schema_version == 54:
+            exploration_dict = cls._convert_v54_dict_to_v55_dict(
                 exploration_dict)
             exploration_schema_version = 55
 
