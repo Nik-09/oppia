@@ -196,6 +196,10 @@ class TranslatableContent:
     def __repr__(self):
         return ("(%s, %s, %s)") % (self.type, self.value, self.hash)
 
+    @classmethod
+    def generate_hash(cls, content, content_type):
+        pass
+
 
 
 class TranslatedContent:

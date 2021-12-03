@@ -5,9 +5,7 @@ on:
       - develop
       - release-*
   pull_request:
-    branches:
-      - develop
-      - release-*
+
 
 jobs:
   run_tests:

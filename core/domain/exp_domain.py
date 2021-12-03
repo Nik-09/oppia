@@ -1937,19 +1937,41 @@ class Exploration(translation_domain.BaseTranslatableObject):
                     if interaction_id == 'TextInput':
                         rule_spec_dict['inputs']['x'] = {
                             'hash': utils.convert_to_hash(
-                                rule_spec_dict['inputs']['x'], 12),
-                            'normalizedStrSet': rule_spec_dict['inputs']['x']
+                                str(rule_spec_dict['inputs']['x']['normalizedStrSet']), 12),
+                            'value': rule_spec_dict['inputs']['x']['normalizedStrSet'],
+                            'type': translation_domain.TRANSLATABLE_CONTENT_FORMAT_SET_OF_NORMALIZED_STRING
                         }
                     elif interaction_id == 'SetInput':
-                        # Convert to TranslatableSetOfUnicodeString.
                         rule_spec_dict['inputs']['x'] = {
                             'hash': utils.convert_to_hash(
-                                rule_spec_dict['inputs']['x'], 12),
-                            'unicodeStrSet': rule_spec_dict['inputs']['x']
+                                str(rule_spec_dict['inputs']['x']['unicodeStrSet']), 12),
+                            'value': rule_spec_dict['inputs']['x']['unicodeStrSet'],
+                            'type': translation_domain.TRANSLATABLE_CONTENT_FORMAT_SET_OF_UNICODE_STRING
                         }
 
             customisation_args = state_dict['interaction']['customization_args']
-            # TODO: migrate customization args.
+            for ca_dict_key, ca_dict_value in customisation_args.items():
+                if isinstance(ca_dict_value['value'], dict):
+                    translatable_value = (
+                        state_dict['interaction']['customization_args'][ca_dict_key]['value']['unicode_str']
+                    )
+                    state_dict['interaction']['customization_args'][ca_dict_key]['value'] = {
+                        'type': 'unicode',
+                        'value': translatable_value,
+                        'hash': utils.convert_to_hash(translatable_value, 12)
+                    }
+                temp_list = []
+                if isinstance(ca_dict_value['value'], list):
+                    for ca_dict in state_dict['interaction']['customization_args'][ca_dict_key]['value']:
+                        if isinstance(ca_dict, dict):
+                            temp = {
+                                'type': 'html',
+                                'value': ca_dict['html'],
+                                'hash': utils.convert_to_hash(ca_dict['html'], 12)
+                            }
+                            temp_list.append(temp)
+                    state_dict['interaction']['customization_args'][ca_dict_key]['value'] = temp_list
+
 
             if state_dict['interaction']['default_outcome'] is not None:
                 state_dict['interaction']['default_outcome']['feedback'] = (

@@ -1085,12 +1085,12 @@ class InteractionCustomizationArg(translation_domain.BaseTranslatableObject):
                     schema_obj_type ==
                     schema_utils.SCHEMA_OBJ_TYPE_SUBTITLED_UNICODE
             ):
-                return SubtitledUnicode(
-                    ca_value['hash'], ca_value['unicode_str'])
+                return translation_domain.TranslatableContent.create_new(
+                    'unicode', ca_value['value'])
 
             if schema_obj_type == schema_utils.SCHEMA_OBJ_TYPE_SUBTITLED_HTML:
-                return SubtitledHtml(
-                    ca_value['hash'], ca_value['html'])
+                return translation_domain.TranslatableContent.create_new(
+                    'html', ca_value['value'])
 
         ca_value = InteractionCustomizationArg.traverse_by_schema_and_convert(
             ca_schema,
@@ -2230,7 +2230,6 @@ class State(translation_domain.BaseTranslatableObject):
             InteractionInstance.from_dict(state_dict['interaction']),
             state_dict['solicit_answer_details'],
             state_dict['card_is_checkpoint'],
-            state_dict['next_content_id_index'],
             state_dict['classifier_model_id'])
 
     @classmethod
