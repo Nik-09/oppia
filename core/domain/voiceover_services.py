@@ -798,3 +798,7 @@ def update_exploration_voice_artist_link_model(
 
     exp_voice_artist_link_model.update_timestamps()
     exp_voice_artist_link_model.put()
+
+
+def generate_automatic_voiceovers_for_exploration(exploration_id, user_id):
+    pass
