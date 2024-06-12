@@ -8,6 +8,14 @@ astroid==2.15.6 \
     --hash=sha256:389656ca57b6108f939cf5d2f9a2a825a3be50ba9d589670f393236e0a03b91c \
     --hash=sha256:903f024859b7c7687d7a7f3a3f73b17301f8e42dfd9cc9df9d4418172d3e2dbd
     # via pylint
+azure-cognitiveservices-speech==1.38.0 \
+    --hash=sha256:16a530e6c646eb49ea0bc05cb45a9d28b99e4b67613f6c3a6c54e26e6bf65241 \
+    --hash=sha256:18dce915ab032711f687abb3297dd19176b9cbea562b322ee6fa7365ef4a5091 \
+    --hash=sha256:1c344e8a6faadb063cea451f0301e13b44d9724e1242337039bff601e81e6f86 \
+    --hash=sha256:1d38d8c056fb3f513a9ff27ab4e77fd08ca487f8788cc7a6df772c1ab2c97b54 \
+    --hash=sha256:1e002595a749471efeac3a54c80097946570b76c13049760b97a4b881d9d24af \
+    --hash=sha256:9dd0800fbc4a8438c6dfd5747a658251914fe2d205a29e9b46158cadac6ab381
+    # via -r requirements_dev.in
 beautifulsoup4==4.12.2 \
     --hash=sha256:492bbc69dca35d12daac71c4db1bfff0c876c00ef4a2ffacce226d4638eb72da \
     --hash=sha256:bd2520ca0d9d7d12694a53d44ac482d181b4ec1888909b035a3dbf40d0f57d4a
