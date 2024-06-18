@@ -22,36 +22,45 @@ import itertools
 import logging
 
 from core import feconf
-from core.constants import constants
-from core.domain import caching_services
-from core.domain import classroom_config_services
-from core.domain import html_cleaner
-from core.domain import opportunity_services
-from core.domain import role_services
-from core.domain import skill_domain
-from core.domain import skill_fetchers
-from core.domain import state_domain
-from core.domain import suggestion_services
-from core.domain import taskqueue_services
-from core.domain import topic_domain
-from core.domain import topic_fetchers
-from core.domain import topic_services
-from core.domain import user_services
 from core.platform import models
-
-from typing import (
-    Callable, Dict, List, Literal, Optional, Set, Tuple, cast, overload)
 
 MYPY = False
 if MYPY: # pragma: no cover
+    from mypy_imports import voiceover_models
     from mypy_imports import question_models
     from mypy_imports import skill_models
     from mypy_imports import topic_models
     from mypy_imports import user_models
 
-(skill_models, user_models, question_models, topic_models) = (
+(voiceover_models, ) = (
     models.Registry.import_models([
-        models.Names.SKILL, models.Names.USER, models.Names.QUESTION,
-        models.Names.TOPIC]))
+        models.Names.VOICEOVER
+    ])
+)
 
+
+def normalize_html_text(html_content: str) -> str:
+    """This method processes HTML text to make it suitable for speech synthesis.
+    It decodes HTML entities and parses the tags to normalize the content for
+    better readability and auditory presentation.
+
+    Args:
+        html_content: str. The html content which needs to be normalized.
+
+    Returns:
+        str. The normalized string which is suitable for speech synthesis.
+    """
+    pass
+
+
+def convert_raw_wav_to_raw_mp3_format(raw_wav_bytes: str) -> str:
+    """Converts raw WAV audio format to raw MP3 audio format.
+
+    Args:
+        raw_wav_bytes: str. The raw WAV audio content.
+
+    Returns:
+        str. The raw MP3 audio content.
+    """
+    pass
 

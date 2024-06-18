@@ -43,6 +43,14 @@ apache-beam[gcp]==2.38.0 \
     --hash=sha256:f66f643fd0518d1e675aea2579d2408de95379dbfe378ff8ea3cefe862300f14 \
     --hash=sha256:f7db8fe24d479683ff978b67491799d40b04c24f2f52a9752e8caeb7b4b98be2
     # via -r requirements.in
+azure-cognitiveservices-speech==1.38.0 \
+    --hash=sha256:16a530e6c646eb49ea0bc05cb45a9d28b99e4b67613f6c3a6c54e26e6bf65241 \
+    --hash=sha256:18dce915ab032711f687abb3297dd19176b9cbea562b322ee6fa7365ef4a5091 \
+    --hash=sha256:1c344e8a6faadb063cea451f0301e13b44d9724e1242337039bff601e81e6f86 \
+    --hash=sha256:1d38d8c056fb3f513a9ff27ab4e77fd08ca487f8788cc7a6df772c1ab2c97b54 \
+    --hash=sha256:1e002595a749471efeac3a54c80097946570b76c13049760b97a4b881d9d24af \
+    --hash=sha256:9dd0800fbc4a8438c6dfd5747a658251914fe2d205a29e9b46158cadac6ab381
+    # via -r requirements.in
 beautifulsoup4==4.10.0 \
     --hash=sha256:9a315ce70049920ea4572a4055bc4bd700c940521d36fc858205ad4fcde149bf \
     --hash=sha256:c23ad23c521d818955a4151a67d81580319d4bf548d3d49f4223ae041ff98891
