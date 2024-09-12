@@ -196,8 +196,9 @@ SAMPLE_EXPLORATION_DICT = exp_domain.ExplorationDict({
                     'content_0': {}
                 }
             },
-        'solicit_answer_details': False,
-        'card_is_checkpoint': True,
+            'solicit_answer_details': False,
+            'card_is_checkpoint': True,
+            'inapplicable_skill_misconception_ids': []
         }
     },
     'version': 3
@@ -1562,6 +1563,24 @@ class AdminHandler(
                 topic_id_4: [topic_id_2],
                 topic_id_5: [topic_id_2, topic_id_3]
             }
+
+            thumbnail_image = b''
+            with open(
+                'core/tests/data/thumbnail.svg', 'rt',
+                encoding='utf-8') as svg_file:
+                svg_file_content = svg_file.read()
+                thumbnail_image = svg_file_content.encode('ascii')
+            fs_services.save_original_and_compressed_versions_of_image(
+                'thumbnail.svg', feconf.ENTITY_TYPE_CLASSROOM, classroom_id_1,
+                thumbnail_image, 'thumbnail', False)
+
+            banner_image = b''
+            with open('core/tests/data/classroom-banner.png', 'rb') as png_file:
+                banner_image = png_file.read()
+            fs_services.save_original_and_compressed_versions_of_image(
+                'banner.png', feconf.ENTITY_TYPE_CLASSROOM, classroom_id_1,
+                banner_image, 'image', False)
+
             classroom_1 = classroom_config_domain.Classroom(
                             classroom_id=classroom_id_1,
                             name='math',
@@ -1577,7 +1596,8 @@ class AdminHandler(
                             ),
                             banner_data=classroom_config_domain.ImageData(
                                 'banner.png', 'transparent', 1000
-                            )
+                            ),
+                            index=0
                         )
 
             classroom_config_services.create_new_classroom(classroom_1)
@@ -2158,7 +2178,9 @@ class AdminSuperAdminPrivilegesHandler(
             NotFoundException. No such user exists.
         """
         assert self.normalized_payload is not None
-        if self.email != feconf.ADMIN_EMAIL_ADDRESS:
+        if self.email != parameter_services.get_platform_parameter_value(
+            platform_parameter_list.ParamName.ADMIN_EMAIL_ADDRESS.value
+        ):
             raise self.UnauthorizedUserException(
                 'Only the default system admin can manage super admins')
         username = self.normalized_payload['username']
@@ -2182,7 +2204,9 @@ class AdminSuperAdminPrivilegesHandler(
                 super admin account.
         """
         assert self.normalized_request is not None
-        if self.email != feconf.ADMIN_EMAIL_ADDRESS:
+        admin_email_address = parameter_services.get_platform_parameter_value(
+            platform_parameter_list.ParamName.ADMIN_EMAIL_ADDRESS.value)
+        if self.email != admin_email_address:
             raise self.UnauthorizedUserException(
                 'Only the default system admin can manage super admins')
         username = self.normalized_request['username']
@@ -2191,7 +2215,7 @@ class AdminSuperAdminPrivilegesHandler(
         if user_settings is None:
             raise self.NotFoundException('No such user exists')
 
-        if user_settings.email == feconf.ADMIN_EMAIL_ADDRESS:
+        if user_settings.email == admin_email_address:
             raise self.InvalidInputException(
                 'Cannot revoke privileges from the default super admin account')
 

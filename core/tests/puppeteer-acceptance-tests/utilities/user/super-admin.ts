@@ -68,8 +68,6 @@ const paramSaveChangesButton = '.save-button-container';
 const paramValueInput = '.e2e-test-text-input';
 const platformParameterNameSelector = '.e2e-test-parameter-name';
 const platformParameterSelector = '.e2e-test-platform-param';
-const saveValuesToStorageButton =
-  '.save-default-values-button .btn.btn-primary';
 const serverModeSelector = '.e2e-test-server-mode-selector';
 
 // Skills and Topics.
@@ -180,7 +178,7 @@ export class SuperAdmin extends BaseUser {
         await allRoleElements[i].evaluate(element =>
           (element as HTMLElement).click()
         );
-        await this.waitForPageToFullyLoad();
+        await this.waitForStaticAssetsToLoad();
         if (role === topicManagerRole) {
           await this.selectTopicForTopicManagerRole(topicName as string);
         }
@@ -407,7 +405,7 @@ export class SuperAdmin extends BaseUser {
         }
         await this.waitForElementToBeClickable(reloadButton);
         await reloadButton.click();
-        await this.page.waitForNetworkIdle();
+        await this.waitForNetworkIdle();
         showMessage(`Reloaded exploration ${explorationName}`);
         return;
       }
@@ -949,13 +947,6 @@ export class SuperAdmin extends BaseUser {
         `Expected "${expectedValue}" but got "${value}" for platform parameter "${parameter}".`
       );
     }
-  }
-
-  /**
-   * Clicks the button to save changes to storage.
-   */
-  async saveChangesToStorage(): Promise<void> {
-    await this.clickOn(saveValuesToStorageButton);
   }
 
   /**
