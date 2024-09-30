@@ -433,6 +433,9 @@ class ExplorationHandler(
                     synced_exp_logged_in_user_data
                         .most_recently_reached_checkpoint_state_name)
 
+        print('Before sending to frontend')
+        print(exploration.to_player_dict())
+
         self.values.update({
             'can_edit': (
                 rights_manager.check_can_edit_activity(

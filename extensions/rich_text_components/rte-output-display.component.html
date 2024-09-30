@@ -1,13 +1,16 @@
-<ng-template #tree let-node>
-  <ng-container *ngFor="let childNode of node.children">
-    <ng-container>
-      <ng-template [cdkPortalOutlet]="childNode.portal"></ng-template>
+<div #treeContainer>
+  <ng-template #tree let-node>
+    <ng-container *ngFor="let childNode of node.children; let i = index">
+      <ng-container>
+        <ng-template [cdkPortalOutlet]="childNode.portal"></ng-template>
+      </ng-container>
     </ng-container>
+  </ng-template>
+  <ng-container *ngIf="show">
+    <ng-container *ngTemplateOutlet="tree; context:{ $implicit: node }"></ng-container>
   </ng-container>
-</ng-template>
-<ng-container *ngIf="show">
-  <ng-container *ngTemplateOutlet="tree; context:{ $implicit: node }"></ng-container>
-</ng-container>
+</div>
+
 
 <!-- Native HTML elements used in CKEditor. -->
 <ng-template #p let-childNode>
@@ -111,3 +114,11 @@
                               [videoIdWithValue]="attrs.videoIdWithValue" attr.video_id-with-value="{{attrs.videoIdWithValue}}">
   </oppia-noninteractive-video>
 </ng-template>
+
+
+<style>
+  .highlight {
+    background-color: yellow;
+    transition: background-color 0.3s ease;
+  }
+</style>

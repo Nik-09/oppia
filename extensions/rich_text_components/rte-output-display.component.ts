@@ -65,11 +65,15 @@ export class RteOutputDisplayComponent implements AfterViewInit {
   @ViewChild('svgdiagram') svgdiagramTagPortal: TemplateRef<unknown>;
   @ViewChild('tabs') tabsTagPortal: TemplateRef<unknown>;
   @ViewChild('video') videoTagPortal: TemplateRef<unknown>;
+  @ViewChild('treeContainer', {static: false}) treeContainer: ElementRef;
   @Input() rteString: string;
   @Input() altTextIsDisplayed: boolean = false;
   node: OppiaRteNode | string = '';
   show = false;
   portalTree: PortalTree = [];
+  private highlightInterval: number = 3000; // Time interval in milliseconds
+  private highlightClass: string = 'highlight';
+  private currentHighlightIndex: number = -1;
 
   constructor(
     private _viewContainerRef: ViewContainerRef,
@@ -77,6 +81,40 @@ export class RteOutputDisplayComponent implements AfterViewInit {
     public elementRef: ElementRef,
     private oppiaHtmlParserService: OppiaRteParserService
   ) {}
+
+  wrapSentencesInSpans(htmlString: string): string {
+    // Create a temporary DOM element
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlString;
+
+    // Recursive function to traverse and wrap sentences
+    function traverse(node: Node) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const textContent = node.textContent || '';
+        const sentences = textContent.split(/(?<=[.!?])\s+/); // Split by punctuation and space
+        const fragment = document.createDocumentFragment();
+
+        sentences.forEach(sentence => {
+          if (sentence.trim()) {
+            const span = document.createElement('span');
+            span.textContent = sentence;
+            fragment.appendChild(span);
+          }
+        });
+
+        node.parentNode?.replaceChild(fragment, node);
+      } else {
+        // Recursively traverse child nodes
+        node.childNodes.forEach(traverse);
+      }
+    }
+
+    // Start traversing from the root of the temporary div
+    traverse(tempDiv);
+
+    // Return the modified HTML string
+    return tempDiv.innerHTML;
+  }
 
   private _updateNode(): void {
     if (this.rteString === undefined || this.rteString === null) {
@@ -97,6 +135,10 @@ export class RteOutputDisplayComponent implements AfterViewInit {
     // affect any other data.
     this.rteString = this.rteString.replace(/<p><\/p>/g, '<p>&nbsp;</p>');
     this.rteString = this.rteString.replace(/\n/g, '');
+
+    this.rteString = this.wrapSentencesInSpans(this.rteString);
+    // console.log(nikhil)
+
     let domparser = new DOMParser();
     let dom = domparser.parseFromString(this.rteString, 'text/html').body;
     try {
@@ -106,6 +148,7 @@ export class RteOutputDisplayComponent implements AfterViewInit {
       e.message += additionalInfo;
       throw e;
     }
+    // console.log('Before the function');
     const dfs = (node: OppiaRteNode | TextNode) => {
       node.portal = this._getTemplatePortal(node);
       if (!('children' in node)) {
@@ -115,6 +158,8 @@ export class RteOutputDisplayComponent implements AfterViewInit {
         dfs(child);
       }
     };
+    // console.log('updated')
+    // console.log(this.node)
     dfs(this.node);
     this.cdRef.detectChanges();
     // The following logic is to remove comment tags (used by angular for
@@ -150,6 +195,9 @@ export class RteOutputDisplayComponent implements AfterViewInit {
     this._updateNode();
     this.show = true;
     this.cdRef.detectChanges();
+    console.log('Done');
+    console.log(this.rteString);
+    this.startHighlighting();
   }
 
   private _getTemplatePortal(
@@ -174,6 +222,45 @@ export class RteOutputDisplayComponent implements AfterViewInit {
         {$implicit: node}
       );
     }
+  }
+
+  startHighlighting(): void {
+    // Select all <p>, <h1>, <span>, etc. elements inside the treeContainer
+    const sentences = this.treeContainer.nativeElement.querySelectorAll(
+      'p, h1, span, li',
+      'ul'
+    );
+    // sentences.forEach(element => {
+    //   console.log(element)
+    //   let subsentences = element.textContent;
+    //   let listOfSubSentences = subsentences.split(/[.?!]/)
+    //   console.log(listOfSubSentences)
+    // });
+    // console.log(sentences);
+
+    this.highlightNextSentence(sentences);
+  }
+
+  highlightNextSentence(sentences: NodeListOf<HTMLElement>): void {
+    setInterval(() => {
+      // Clear previous highlights
+      this.clearHighlight(sentences);
+
+      // Move to the next sentence
+      this.currentHighlightIndex++;
+      if (this.currentHighlightIndex >= sentences.length) {
+        this.currentHighlightIndex = 0;
+      }
+
+      // Add the highlight class to the current sentence
+      sentences[this.currentHighlightIndex].classList.add(this.highlightClass);
+    }, this.highlightInterval);
+  }
+
+  clearHighlight(sentences: NodeListOf<HTMLElement>): void {
+    sentences.forEach(sentence =>
+      sentence.classList.remove(this.highlightClass)
+    );
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -212,6 +299,7 @@ export class RteOutputDisplayComponent implements AfterViewInit {
       textNodes.forEach(node => node.parentElement.removeChild(node));
 
       this._updateNode();
+      // console.log(textNodes)
       setTimeout(() => (this.show = true), 0);
     }
   }
